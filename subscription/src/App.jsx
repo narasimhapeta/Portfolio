@@ -8,6 +8,7 @@ import HomeLayout from './modules/public/shared/homelayout'
 import { BrowserRouter } from 'react-router-dom';
 import Footer from './modules/public/shared/Footer';
 import Navbar from './modules/public/shared/Navbar';
+import AuthProvider from './context/AuthProvider';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -17,9 +18,11 @@ function App() {
 
       {/* <SearchPlan/> */}
       <BrowserRouter>
-        <Navbar />
-        <HomeLayout />
-        <Footer />
+        <AuthProvider>
+          <Navbar />
+          <HomeLayout />
+          <Footer />
+        </AuthProvider>
       </BrowserRouter>
     </>
   )

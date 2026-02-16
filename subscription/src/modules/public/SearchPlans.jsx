@@ -4,7 +4,7 @@ import InternetPlans from "./InternetPlans";
 
 function SearchPlan(){
 
-    const speedOptions = internetplans;
+    const speedOptions = Array.from(new Set(internetplans.map(d=>d.speed)));
     const [selectedSpeed, setSelectedSpeed] = useState();
     const [totalRecords, setTotalRecords] = useState(0);
 
@@ -25,8 +25,8 @@ function SearchPlan(){
                 <select className="form-select" onChange={(e)=> handleChange(e)}>
                     <option value="">--All Plans--</option>
                     {speedOptions.map((plan, indx)=>(
-                        <option key={indx} value={plan.speed}>
-                            {plan.speed}
+                        <option key={indx} value={plan}>
+                            {plan}
                         </option>
                     )
 
