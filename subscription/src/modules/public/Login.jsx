@@ -3,12 +3,13 @@ import { useContext, useState } from "react";
 import * as Yup from 'yup';
 import { useAuth } from "../../context/AuthProvider";
 import { AuthService } from "../../services/AuthService";
+import { useNavigate } from "react-router-dom";
 
 
 function Login() {
 
     const { loginClick } = useAuth();
-
+    const navigate = useNavigate();
     const loginForm = {
         email: "",
         password: ""
@@ -36,6 +37,13 @@ function Login() {
                 setTimeout(() => {
                     loginClick(user);
                 }, 2000);
+
+                if(user.user.role === "admin"){
+                    navigate('/admin');
+                }
+                else if(user.user.role === "user"){
+                    navigate('/user');
+                }
 
             }
         }

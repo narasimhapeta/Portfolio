@@ -14,7 +14,7 @@ function AuthProvider({children}){
     const loginClick = (user) => {
         setCurrentUser(user);
         sessionStorage.setItem("auth", JSON.stringify(user));
-        navigate("/plans");
+       
     }
 
     const logoutClick = () => {
