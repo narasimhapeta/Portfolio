@@ -6,6 +6,7 @@ import RegisterForm from "../RegisterForm";
 import InternetPlansFromApi from "../InternetPlansFromApi";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Unauthorize from "../Unauthorize";
 
 function HomeLayout(){
     return <>
@@ -16,6 +17,7 @@ function HomeLayout(){
              <Route path="/plansapi" element={<InternetPlansFromApi/>}></Route>
             <Route path="/login" element={<Login/>}></Route>
             <Route path="/signup" element={<RegisterForm/>}></Route>
+             <Route path="/unauthorize" element={<Unauthorize/>}></Route>
         </Routes>
         <Footer/>
     </>

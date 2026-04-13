@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import AdminPlan from "../AdminPlan";
 import AdminNavbar from "./AdminNavbar";
 import AdminFooter from "./AdminFooter";
+import InternetPlansList from "../InternetPlansList";
 
 function AdminLayout(){
 
@@ -10,6 +11,7 @@ function AdminLayout(){
         <AdminNavbar/>
         <Routes>
             <Route path="addplan" element={<AdminPlan/>}></Route>
+            <Route path="plans" element={<InternetPlansList/>}></Route>
         </Routes>
         <AdminFooter/>
     </>

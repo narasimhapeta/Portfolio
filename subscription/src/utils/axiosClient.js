@@ -1,7 +1,8 @@
 import axios from "axios";
+import { BASEURL } from "./constants";
 
 const axiosClient = axios.create({
-    baseURL: "https://localhost:7178",
+    baseURL: `${BASEURL}`,
     headers: {
         "Content-Type": "application/json",
         "Accept": "application/json"
@@ -20,5 +21,16 @@ axiosClient.interceptors.request.use(
     }, (error) => { Promise.reject(error); }
 )
 
+//response interceptor
+axiosClient.interceptors.response.use(
+    response => response,
+    (error) => {
+        if(error.response?.status === 401){
+            sessionStorage.removeItem('auth');
+            window.location.href = "/login";
+        }
+        return Promise.reject(error);
+    }
+)
 
 export default axiosClient;

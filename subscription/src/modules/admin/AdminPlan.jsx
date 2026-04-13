@@ -2,6 +2,7 @@ import { Field, Formik, Form, ErrorMessage } from "formik";
 import * as Yup from 'yup';
 import { PlanService } from "../../services/PlanService";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function AdminPlan() {
 
@@ -13,6 +14,7 @@ function AdminPlan() {
         features: ""
     }
 
+    const navigate = useNavigate();
     const [submitMessage, setSubmitMessage] = useState();
     const [submitErrorMessage, setSubmitErrorMessage] = useState();
 
@@ -23,6 +25,7 @@ function AdminPlan() {
                     setSubmitMessage('New Plan added');
                     setTimeout(() => {
                         setSubmitMessage("");
+                        navigate('admin/plans');
                     }, 3000);
                 }
             }).catch((error) => {

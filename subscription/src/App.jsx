@@ -10,6 +10,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 // import Navbar from './modules/public/shared/Navbar';
 import AuthProvider from './context/AuthProvider';
 import AdminLayout from './modules/admin/shared/AdminLayout';
+import UserLayout from './modules/user/shared/UserLayout';
+import AuthorizedRoute from './context/AuthorizedRoute';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -21,7 +23,10 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/admin/*" element={<AdminLayout/>}></Route> 
+            <Route path="/admin/*" element={<AuthorizedRoute role="admin">
+               <AdminLayout/> 
+               </AuthorizedRoute>}></Route> 
+            <Route path="/user/*" element={<AuthorizedRoute role="user"> <UserLayout/> </AuthorizedRoute>}></Route> 
             <Route path="*" element={<HomeLayout/>}></Route> 
           </Routes>
         </AuthProvider>
