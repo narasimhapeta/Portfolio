@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cosmos-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    ports:
+      - "8081:8081"
+    environment:
+      AZURE_COSMOS_EMULATOR_PARTITION_COUNT: 3
+      AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: "false"
+
+  fractureguard-predictor:
+    build: ./fractureguard-predictor
+    env_file: .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+
+  fractureguard-notifier:
+    build: ./fractureguard-notifier
+    env_file: .env
+    ports:
+      - "3001:3001"
+
+  fractureguard-api:
+    build: ./FractureGuard.Api
+    env_file: .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      cosmos-emulator:
+        condition: service_started
+      fractureguard-notifier:
+        condition: service_started
+    ports:
+      - "5000:8080"
+
+  fractureguard-dashboard:
+    build: ./fractureguard-dashboard
+    ports:
+      - "4200:80"
+    depends_on:
+      - fractureguard-api
+      - fractureguard-notifier

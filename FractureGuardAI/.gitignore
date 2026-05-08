@@ -1,0 +1,27 @@
+# .env files
+.env
+.env.local
+
+# .NET
+**/bin/
+**/obj/
+*.user
+
+# Python
+__pycache__/
+*.pyc
+*.pkl
+.venv/
+
+# Node
+node_modules/
+dist/
+
+# Angular build
+fractureguard-dashboard/dist/
+
+# ML model artifacts (regenerate with train script)
+fractureguard-predictor/ml/screen_out_rf.pkl
+
+# Superpowers
+.superpowers/
