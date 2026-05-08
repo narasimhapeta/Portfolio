@@ -6,7 +6,10 @@ export function joinRoom(sessionId, socketId) {
 }
 
 export function leaveRoom(sessionId, socketId) {
-  rooms.get(sessionId)?.delete(socketId);
+  const set = rooms.get(sessionId);
+  if (!set) return;
+  set.delete(socketId);
+  if (set.size === 0) rooms.delete(sessionId);
 }
 
 export function getRoomName(sessionId) {
