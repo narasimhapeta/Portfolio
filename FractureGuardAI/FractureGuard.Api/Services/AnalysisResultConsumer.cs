@@ -29,19 +29,28 @@ public class AnalysisResultConsumer : BackgroundService
                     HostName = _config["RABBITMQ_HOST"] ?? "localhost",
                     UserName = _config["RABBITMQ_USER"] ?? "guest",
                     Password = _config["RABBITMQ_PASS"] ?? "guest",
+                    DispatchConsumersAsync = true,
                 };
                 using var conn = factory.CreateConnection();
                 using var ch = conn.CreateModel();
                 ch.QueueDeclare(ResultQueue, durable: true, exclusive: false, autoDelete: false);
+                ch.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
-                var consumer = new EventingBasicConsumer(ch);
+                var consumer = new AsyncEventingBasicConsumer(ch);
                 consumer.Received += async (_, ea) =>
                 {
                     try
                     {
                         var body = Encoding.UTF8.GetString(ea.Body.ToArray());
                         var result = JsonSerializer.Deserialize<AnalysisResult>(body,
-                            new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+                            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+                        if (result is null)
+                        {
+                            _logger.LogWarning("Null or malformed analysis result, discarding");
+                            ch.BasicNack(ea.DeliveryTag, false, requeue: false);
+                            return;
+                        }
 
                         using var scope = _sp.CreateScope();
                         var reportPlugin = scope.ServiceProvider.GetRequiredService<ReportPlugin>();

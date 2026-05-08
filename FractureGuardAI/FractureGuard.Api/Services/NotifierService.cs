@@ -12,6 +12,9 @@ public class NotifierService(HttpClient httpClient, IConfiguration config) : INo
         };
         request.Headers.Add("x-webhook-secret",
             config["NOTIFIER_WEBHOOK_SECRET"] ?? "local-webhook-secret");
-        await httpClient.SendAsync(request);
+        var response = await httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException(
+                $"Notifier returned {(int)response.StatusCode} for session {sessionId}");
     }
 }
