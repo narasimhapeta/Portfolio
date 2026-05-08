@@ -26,3 +26,6 @@ fractureguard-predictor/ml/screen_out_rf.pkl
 
 # Superpowers
 .superpowers/
+
+# Claude Code
+.claude/
