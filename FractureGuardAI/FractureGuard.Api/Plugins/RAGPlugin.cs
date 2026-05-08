@@ -10,6 +10,9 @@ public class RAGPlugin(IVectorSearchService searchService)
     public async Task<string> GetSafetyContextAsync(
         [Description("The operator's question or risk scenario")] string query)
     {
+        if (string.IsNullOrWhiteSpace(query))
+            return "No relevant safety protocols found.";
+
         var chunks = await searchService.SearchAsync(query, topK: 3);
         return chunks.Count == 0
             ? "No relevant safety protocols found."
