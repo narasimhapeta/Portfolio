@@ -1,0 +1,41 @@
+<div class="dashboard" [class.at-risk]="atRisk()">
+
+  @if (activeAlert()) {
+    <div class="alert-banner">
+      <strong>AI RISK ALERT</strong>
+      {{ activeAlert()?.content }}
+      <button class="dismiss" (click)="dismissAlert()">&#x2715;</button>
+    </div>
+  }
+
+  @if (reading(); as r) {
+    <div class="kpi-grid">
+      <div class="kpi-card" [class.danger]="r.pressure_psi > 950">
+        <span class="label">Pressure</span>
+        <span class="value">{{ r.pressure_psi | number:'1.0-0' }} PSI</span>
+      </div>
+      <div class="kpi-card">
+        <span class="label">Flow Rate</span>
+        <span class="value">{{ r.flow_rate_bpm | number:'1.1-1' }} BPM</span>
+      </div>
+      <div class="kpi-card" [class.danger]="r.vibration_g > 2.5">
+        <span class="label">Vibration</span>
+        <span class="value">{{ r.vibration_g | number:'1.2-2' }} g</span>
+      </div>
+      <div class="kpi-card">
+        <span class="label">Temperature</span>
+        <span class="value">{{ r.temperature_c | number:'1.1-1' }} &#176;C</span>
+      </div>
+    </div>
+  } @else {
+    <p class="connecting">Connecting to sensor stream...</p>
+  }
+
+  <button class="chat-toggle" (click)="toggleChat()">
+    {{ showChat ? 'Close AI Chat' : 'Ask AI Analyst' }}
+  </button>
+
+  @if (showChat) {
+    <app-chat-panel />
+  }
+</div>
