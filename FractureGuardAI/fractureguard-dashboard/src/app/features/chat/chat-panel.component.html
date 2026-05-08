@@ -1,0 +1,29 @@
+<div class="chat-panel">
+  <div class="messages">
+    @for (msg of chat.messages(); track msg.timestamp) {
+      <div class="message" [class.user]="msg.role === 'user'">
+        <span class="role">{{ msg.role === 'user' ? 'You' : 'AI Analyst' }}</span>
+        <p>{{ msg.content }}</p>
+      </div>
+    }
+    @if (chat.isStreaming()) {
+      <div class="message assistant">
+        <span class="role">AI Analyst</span>
+        <p class="cursor">&#9612;</p>
+      </div>
+    }
+  </div>
+
+  <div class="input-row">
+    <input
+      [ngModel]="inputText()"
+      (ngModelChange)="inputText.set($event)"
+      (keydown.enter)="send()"
+      placeholder="Ask about risk, sensor readings, protocols..."
+      [disabled]="chat.isStreaming()"
+    />
+    <button (click)="send()" [disabled]="chat.isStreaming() || !inputText()">
+      Send
+    </button>
+  </div>
+</div>
