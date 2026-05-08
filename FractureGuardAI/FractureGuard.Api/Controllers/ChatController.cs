@@ -30,9 +30,9 @@ public class ChatController(
         await cosmosDb.AppendMessageAsync(sessionId, userId,
             new ChatMessage("user", request.Message, DateTimeOffset.UtcNow));
 
-        Response.Headers.Append("Content-Type", "text/event-stream");
-        Response.Headers.Append("Cache-Control", "no-cache");
-        Response.Headers.Append("Connection", "keep-alive");
+        Response.ContentType = "text/event-stream";
+        Response.Headers.CacheControl = "no-cache";
+        Response.Headers.Connection = "keep-alive";
 
         var snapshot      = await sensorPlugin.GetCurrentReadingsAsync();
         var safetyContext = await ragPlugin.GetSafetyContextAsync(request.Message);
@@ -60,25 +60,46 @@ public class ChatController(
 
         if (needsPrediction && snapshot is not null)
         {
-            var ack = await predictionPlugin.RequestPredictionAsync(sessionId, snapshot, User);
-            history.AddAssistantMessage(ack);
-            history.AddUserMessage(
-                "While the simulation runs, briefly explain what current readings suggest.");
+            try
+            {
+                var ack = await predictionPlugin.RequestPredictionAsync(sessionId, snapshot, User);
+                history.AddAssistantMessage(ack);
+                history.AddUserMessage(
+                    "While the simulation runs, briefly explain what current readings suggest.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                await Response.WriteAsync("data: ML simulations require the SiteEngineer role.\n\n", ct);
+                await Response.Body.FlushAsync(ct);
+            }
         }
 
         var chat = kernel.GetRequiredService<IChatCompletionService>();
         var sb   = new StringBuilder();
 
-        await foreach (var chunk in chat.GetStreamingChatMessageContentsAsync(history, cancellationToken: ct))
+        try
         {
-            var text = chunk.Content ?? string.Empty;
-            sb.Append(text);
-            await Response.WriteAsync($"data: {text}\n\n", ct);
+            await foreach (var chunk in chat.GetStreamingChatMessageContentsAsync(history, cancellationToken: ct))
+            {
+                var text = chunk.Content ?? string.Empty;
+                sb.Append(text);
+                await Response.WriteAsync($"data: {text}\n\n", ct);
+                await Response.Body.FlushAsync(ct);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Client disconnected — persist what we have
+        }
+        catch (Exception)
+        {
+            await Response.WriteAsync("data: [Error: AI service unavailable]\n\n", ct);
             await Response.Body.FlushAsync(ct);
         }
 
-        await cosmosDb.AppendMessageAsync(sessionId, userId,
-            new ChatMessage("assistant", sb.ToString(), DateTimeOffset.UtcNow));
+        if (sb.Length > 0)
+            await cosmosDb.AppendMessageAsync(sessionId, userId,
+                new ChatMessage("assistant", sb.ToString(), DateTimeOffset.UtcNow));
     }
 
     [HttpGet("{sessionId}")]
