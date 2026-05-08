@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { ChatMessage } from '../models/chat.model';
 
-const DEV_JWT = 'dev-engineer-token';
+const DEV_JWT = 'dev-engineer-token'; // TODO: replace with MSAL token in prod
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
@@ -19,14 +19,18 @@ export class ChatService {
   }
 
   async sendMessage(content: string): Promise<void> {
+    if (this.isStreaming()) return; // guard against concurrent sends
+
     this.addUserMessage(content);
     this.isStreaming.set(true);
 
+    // Use a stable ID to avoid fragile index-based updates
+    const msgId = crypto.randomUUID();
     const assistantMsg: ChatMessage = {
-      role: 'assistant', content: '', timestamp: new Date().toISOString()
+      role: 'assistant', content: '', timestamp: new Date().toISOString(),
+      id: msgId,
     };
     this.messages.update(msgs => [...msgs, assistantMsg]);
-    const msgIndex = this.messages().length - 1;
 
     try {
       const response = await fetch(`${environment.apiUrl}/api/chat`, {
@@ -38,7 +42,15 @@ export class ChatService {
         body: JSON.stringify({ message: content, sessionId: this.sessionId }),
       });
 
-      const reader  = response.body!.getReader();
+      if (!response.ok) {
+        throw new Error(`Chat API returned ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('Streaming not supported by this browser');
+      }
+
+      const reader  = response.body.getReader();
       const decoder = new TextDecoder();
 
       while (true) {
@@ -49,10 +61,15 @@ export class ChatService {
         for (const line of lines) {
           const text = line.slice(6);
           this.messages.update(msgs =>
-            msgs.map((m, i) => i === msgIndex ? { ...m, content: m.content + text } : m)
+            msgs.map(m => m.id === msgId ? { ...m, content: m.content + text } : m)
           );
         }
       }
+    } catch (err) {
+      const errorText = err instanceof Error ? err.message : 'Unknown error';
+      this.messages.update(msgs =>
+        msgs.map(m => m.id === msgId ? { ...m, content: `[Error: ${errorText}]` } : m)
+      );
     } finally {
       this.isStreaming.set(false);
     }
