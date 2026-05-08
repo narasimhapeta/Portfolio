@@ -6,7 +6,7 @@ namespace FractureGuard.Api.Infrastructure;
 public interface ICosmosDbService
 {
     Task<ChatSession> GetOrCreateSessionAsync(string sessionId, string userId);
-    Task AppendMessageAsync(string sessionId, ChatMessage message);
+    Task AppendMessageAsync(string sessionId, string userId, ChatMessage message);
     Task<List<ChatSession>> GetSessionsByUserAsync(string userId);
 }
 
@@ -16,10 +16,13 @@ public class CosmosDbService : ICosmosDbService
 
     public CosmosDbService(IConfiguration config)
     {
-        var client = new CosmosClient(
-            config["COSMOS_ENDPOINT"],
-            config["COSMOS_KEY"]
-        );
+        var endpoint = config["COSMOS_ENDPOINT"];
+        var key = config["COSMOS_KEY"];
+        if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(key))
+            throw new InvalidOperationException(
+                "COSMOS_ENDPOINT and COSMOS_KEY must be configured.");
+
+        var client = new CosmosClient(endpoint, key);
         var db = client.GetDatabase(config["COSMOS_DB"] ?? "FractureGuardDB");
         _container = db.GetContainer("ChatSessions");
     }
@@ -41,11 +44,11 @@ public class CosmosDbService : ICosmosDbService
         }
     }
 
-    public async Task AppendMessageAsync(string sessionId, ChatMessage message)
+    public async Task AppendMessageAsync(string sessionId, string userId, ChatMessage message)
     {
         var patch = PatchOperation.Add("/messages/-", message);
         await _container.PatchItemAsync<ChatSession>(
-            sessionId, new PartitionKey(sessionId), new[] { patch }
+            sessionId, new PartitionKey(userId), new[] { patch }
         );
     }
 

@@ -15,10 +15,14 @@ public class VectorSearchService : IVectorSearchService
 
     public VectorSearchService(IConfiguration config)
     {
+        var endpoint = config["AZURE_SEARCH_ENDPOINT"] ?? "http://localhost:9200";
+        var key = config["AZURE_SEARCH_KEY"] ?? "dev-key";
+        var index = config["AZURE_SEARCH_INDEX"] ?? "safety-manuals";
+
         _client = new SearchClient(
-            new Uri(config["AZURE_SEARCH_ENDPOINT"] ?? "http://localhost:9200"),
-            config["AZURE_SEARCH_INDEX"] ?? "safety-manuals",
-            new AzureKeyCredential(config["AZURE_SEARCH_KEY"] ?? "dev-key")
+            new Uri(endpoint),
+            index,
+            new AzureKeyCredential(key)
         );
     }
 
