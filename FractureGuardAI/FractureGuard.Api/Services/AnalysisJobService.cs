@@ -7,37 +7,59 @@ namespace FractureGuard.Api.Services;
 
 public class AnalysisJobService : IAnalysisJobService, IDisposable
 {
-    private readonly IConnection _connection;
-    private readonly IModel _channel;
     private const string QueueName = "analysis-requests";
+    private readonly IConfiguration _config;
+    private readonly SemaphoreSlim _lock = new(1, 1);
+    private IConnection? _connection;
+    private IModel? _channel;
 
     public AnalysisJobService(IConfiguration config)
     {
+        _config = config;
+    }
+
+    private IModel EnsureChannel()
+    {
+        if (_channel is { IsOpen: true }) return _channel;
+
         var factory = new ConnectionFactory
         {
-            HostName = config["RABBITMQ_HOST"] ?? "localhost",
-            UserName = config["RABBITMQ_USER"] ?? "guest",
-            Password = config["RABBITMQ_PASS"] ?? "guest",
+            HostName = _config["RABBITMQ_HOST"] ?? "localhost",
+            UserName = _config["RABBITMQ_USER"] ?? "guest",
+            Password = _config["RABBITMQ_PASS"] ?? "guest",
         };
+        _connection?.Dispose();
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
         _channel.QueueDeclare(QueueName, durable: true, exclusive: false, autoDelete: false);
+        return _channel;
     }
 
-    public Task PublishAsync(AnalysisRequest request)
+    public async Task PublishAsync(AnalysisRequest request)
     {
         var body = Encoding.UTF8.GetBytes(
             JsonSerializer.Serialize(request, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
-        var props = _channel.CreateBasicProperties();
-        props.ContentType = "application/json";
-        props.Persistent = true;
-        _channel.BasicPublish("", QueueName, props, body);
-        return Task.CompletedTask;
+
+        await _lock.WaitAsync();
+        try
+        {
+            var ch = EnsureChannel();
+            var props = ch.CreateBasicProperties();
+            props.ContentType = "application/json";
+            props.Persistent = true;
+            ch.BasicPublish("", QueueName, props, body);
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     public void Dispose()
     {
-        _channel.Dispose();
-        _connection.Dispose();
+        _channel?.Dispose();
+        _connection?.Dispose();
+        _lock.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
