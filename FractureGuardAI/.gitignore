@@ -12,6 +12,7 @@ __pycache__/
 *.pyc
 *.pkl
 .venv/
+*.egg-info/
 
 # Node
 node_modules/
