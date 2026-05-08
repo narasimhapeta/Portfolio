@@ -51,3 +51,16 @@ def test_handle_message_acks_delivery(mock_clf):
         handle_message(mock_channel, mock_method, MagicMock(), body)
 
     mock_channel.basic_ack.assert_called_once_with(delivery_tag=42)
+
+
+def test_handle_message_nacks_on_invalid_payload():
+    mock_channel = MagicMock()
+    mock_method = MagicMock()
+    mock_method.delivery_tag = 99
+    body = b"not valid json"
+
+    handle_message(mock_channel, mock_method, MagicMock(), body)
+
+    mock_channel.basic_nack.assert_called_once_with(delivery_tag=99, requeue=False)
+    mock_channel.basic_publish.assert_not_called()
+    mock_channel.basic_ack.assert_not_called()

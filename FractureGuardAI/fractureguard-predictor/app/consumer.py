@@ -20,7 +20,12 @@ def handle_message(channel, method, properties, body: bytes) -> None:
         payload = json.loads(body)
         request = AnalysisRequest(**payload)
         result = predict_screen_out(request.sensor_snapshot, session_id=request.session_id)
+    except (json.JSONDecodeError, ValueError) as exc:
+        logger.error("Invalid message payload, discarding: %s", exc)
+        channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+        return
 
+    try:
         channel.basic_publish(
             exchange="",
             routing_key=RESULT_QUEUE,
@@ -29,9 +34,9 @@ def handle_message(channel, method, properties, body: bytes) -> None:
         )
         channel.basic_ack(delivery_tag=method.delivery_tag)
         logger.info("Published result for session %s risk=%.1f%%", result.session_id, result.risk_pct)
-    except Exception:
-        logger.exception("Failed to process message")
-        channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+    except pika.exceptions.AMQPError:
+        logger.exception("Failed to publish result, requeueing message")
+        channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
 
 def start_consuming() -> None:
@@ -39,7 +44,12 @@ def start_consuming() -> None:
         try:
             credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
             conn = pika.BlockingConnection(
-                pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
+                pika.ConnectionParameters(
+                    host=RABBITMQ_HOST,
+                    credentials=credentials,
+                    heartbeat=60,
+                    blocked_connection_timeout=300,
+                )
             )
             ch = conn.channel()
             ch.queue_declare(queue=REQUEST_QUEUE, durable=True)
@@ -48,6 +58,6 @@ def start_consuming() -> None:
             ch.basic_consume(queue=REQUEST_QUEUE, on_message_callback=handle_message)
             logger.info("Waiting for analysis requests on %s", REQUEST_QUEUE)
             ch.start_consuming()
-        except pika.exceptions.AMQPConnectionError:
+        except pika.exceptions.AMQPError:
             logger.warning("RabbitMQ not ready, retrying in 5s...")
             time.sleep(5)
