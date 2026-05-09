@@ -49,7 +49,7 @@ services:
       fractureguard-notifier:
         condition: service_started
     ports:
-      - "5000:8080"
+      - "5000:5000"
 
   fractureguard-dashboard:
     build: ./fractureguard-dashboard

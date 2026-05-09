@@ -1,13 +1,40 @@
 using Microsoft.Identity.Web;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Logging;
+using System.Text;
 using Microsoft.SemanticKernel;
 using FractureGuard.Api.Infrastructure;
 using FractureGuard.Api.Plugins;
 using FractureGuard.Api.Services;
 
+IdentityModelEventSource.ShowPII = true;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Auth
-builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
+// Auth: symmetric dev JWT when DEV_JWT_SECRET is set; Azure AD otherwise
+var devJwtSecret = builder.Configuration["DEV_JWT_SECRET"];
+if (!string.IsNullOrEmpty(devJwtSecret))
+{
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(o =>
+        {
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(devJwtSecret));
+            o.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = key
+            };
+        });
+}
+else
+{
+    builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
+}
 builder.Services.AddAuthorization();
 
 // Infrastructure
@@ -41,7 +68,8 @@ builder.Services.AddSingleton(sp =>
 });
 
 // Plugins (scoped so they can use scoped services)
-builder.Services.AddScoped<FractureGuard.Api.Plugins.SensorPlugin>();
+builder.Services.AddHttpClient<FractureGuard.Api.Plugins.SensorPlugin>(c =>
+    c.BaseAddress = new Uri(builder.Configuration["NOTIFIER_URL"] ?? "http://localhost:3001"));
 builder.Services.AddScoped<FractureGuard.Api.Plugins.RAGPlugin>();
 builder.Services.AddScoped<FractureGuard.Api.Plugins.PredictionPlugin>();
 builder.Services.AddScoped<FractureGuard.Api.Plugins.ReportPlugin>();

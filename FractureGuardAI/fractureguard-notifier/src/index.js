@@ -59,6 +59,8 @@ app.post('/notify', (req, res) => {
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
+app.get('/api/sensors/latest', (_req, res) => res.json(generateReading()));
+
 httpServer.listen(PORT, () => {
   console.log(`Notifier listening on :${PORT}`);
   setInterval(() => io.emit('sensor:reading', generateReading()), SENSOR_INTERVAL_MS);

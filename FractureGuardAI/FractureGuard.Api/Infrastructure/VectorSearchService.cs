@@ -11,23 +11,24 @@ public interface IVectorSearchService
 
 public class VectorSearchService : IVectorSearchService
 {
-    private readonly SearchClient _client;
+    private readonly SearchClient? _client;
 
     public VectorSearchService(IConfiguration config)
     {
-        var endpoint = config["AZURE_SEARCH_ENDPOINT"] ?? "http://localhost:9200";
-        var key = config["AZURE_SEARCH_KEY"] ?? "dev-key";
-        var index = config["AZURE_SEARCH_INDEX"] ?? "safety-manuals";
-
-        _client = new SearchClient(
-            new Uri(endpoint),
-            index,
-            new AzureKeyCredential(key)
-        );
+        var endpoint = config["AZURE_SEARCH_ENDPOINT"];
+        if (!string.IsNullOrEmpty(endpoint) && endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            var key = config["AZURE_SEARCH_KEY"] ?? "dev-key";
+            var index = config["AZURE_SEARCH_INDEX"] ?? "safety-manuals";
+            _client = new SearchClient(new Uri(endpoint), index, new AzureKeyCredential(key));
+        }
     }
 
     public async Task<IReadOnlyList<string>> SearchAsync(string query, int topK = 3)
     {
+        if (_client is null)
+            return Array.Empty<string>();
+
         var options = new SearchOptions { Size = topK, Select = { "content" } };
         var results = await _client.SearchAsync<SearchDocument>(query, options);
         var chunks = new List<string>();

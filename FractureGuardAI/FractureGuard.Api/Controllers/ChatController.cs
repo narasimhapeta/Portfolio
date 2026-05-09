@@ -18,7 +18,8 @@ public class ChatController(
     ICosmosDbService cosmosDb,
     SensorPlugin sensorPlugin,
     RAGPlugin ragPlugin,
-    PredictionPlugin predictionPlugin) : ControllerBase
+    PredictionPlugin predictionPlugin,
+    ILogger<ChatController> logger) : ControllerBase
 {
     [HttpPost]
     public async Task Post([FromBody] ChatRequest request, CancellationToken ct)
@@ -91,8 +92,9 @@ public class ChatController(
         {
             // Client disconnected — persist what we have
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            logger.LogError(ex, "SK streaming failed");
             await Response.WriteAsync("data: [Error: AI service unavailable]\n\n", ct);
             await Response.Body.FlushAsync(ct);
         }
