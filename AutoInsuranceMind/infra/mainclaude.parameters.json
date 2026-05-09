@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "centralus"
+    },
+    "appName": {
+      "value": "autoinsurancemind"
+    },
+    "azureOpenAIApiKey": {
+      "value": "YOUR_AZURE_OPENAI_API_KEY"
+    },
+    "docIntelligenceApiKey": {
+      "value": "YOUR_DOC_INTELLIGENCE_API_KEY"
+    },
+    "searchAdminKey": {
+      "value": "YOUR_SEARCH_ADMIN_KEY"
+    }
+  }
+}

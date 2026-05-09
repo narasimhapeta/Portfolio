@@ -1,0 +1,6 @@
+@AutoInsuranceMind.API_HostAddress = http://localhost:5255
+
+GET {{AutoInsuranceMind.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,76 @@
+.file-upload-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+}
+
+.panel-title { margin: 0 0 4px; font-size: 1rem; font-weight: 700; color: #1e3a5f; }
+.panel-subtitle { margin: 0 0 16px; font-size: 0.8rem; color: #6b7280; }
+
+.drop-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f9fafb;
+}
+.drop-zone:hover, .drop-zone.dragging { border-color: #3b82f6; background: #eff6ff; }
+.drop-zone.uploading { cursor: not-allowed; opacity: 0.7; }
+
+.drop-content { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.drop-icon { font-size: 2rem; }
+.drop-content p { margin: 0; font-size: 0.875rem; color: #374151; }
+.drop-hint { font-size: 0.75rem !important; color: #9ca3af !important; }
+.drop-link { color: #3b82f6; text-decoration: underline; }
+
+.spinner {
+  width: 28px; height: 28px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.upload-success { color: #16a34a; font-size: 0.875rem; margin: 10px 0 0; }
+.upload-error { color: #ef4444; font-size: 0.875rem; margin: 10px 0 0; }
+
+.docs-section { margin-top: 16px; }
+.docs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.docs-header h4 { margin: 0; font-size: 0.875rem; color: #374151; }
+
+.empty-state { font-size: 0.8rem; color: #9ca3af; text-align: center; padding: 12px; }
+
+.docs-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+
+.doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #f3f4f6;
+}
+
+.doc-info { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.doc-name { font-size: 0.8rem; font-weight: 500; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.doc-meta { font-size: 0.7rem; color: #6b7280; }
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.btn-delete:hover { color: #ef4444; background: #fef2f2; }
+
+@keyframes spin { to { transform: rotate(360deg); } }

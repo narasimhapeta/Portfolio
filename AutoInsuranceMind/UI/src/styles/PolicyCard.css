@@ -1,0 +1,72 @@
+.policy-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border: 1px solid #e5e7eb;
+  transition: box-shadow 0.2s;
+}
+.policy-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+
+.policy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.policy-number { margin: 0 0 4px; font-size: 1.1rem; color: #1e3a5f; font-weight: 700; }
+.policy-type { margin: 0; font-size: 0.75rem; color: #6b7280; letter-spacing: 0.05em; }
+
+.policy-status {
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.policy-meta {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.meta-item { display: flex; flex-direction: column; gap: 2px; }
+.meta-label { font-size: 0.75rem; color: #6b7280; }
+.meta-value { font-size: 0.95rem; font-weight: 600; color: #111827; }
+
+.coverages-title { margin: 0 0 10px; font-size: 0.875rem; color: #374151; font-weight: 600; }
+
+.coverages-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+
+.coverage-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #f3f4f6;
+}
+
+.coverage-info { display: flex; flex-direction: column; gap: 2px; }
+.coverage-type { font-size: 0.875rem; font-weight: 600; color: #1e3a5f; text-transform: capitalize; }
+.coverage-limits { font-size: 0.75rem; color: #6b7280; }
+
+.btn-edit {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-edit:hover { background: #dbeafe; }
