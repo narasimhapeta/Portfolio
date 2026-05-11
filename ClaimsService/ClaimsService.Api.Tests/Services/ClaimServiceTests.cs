@@ -100,4 +100,58 @@ public class ClaimServiceTests
         await Assert.ThrowsAsync<KeyNotFoundException>(
             () => _sut.AssignAdjusterAsync("c1", "adj-missing"));
     }
+
+    [Fact]
+    public async Task GeneratePhotoUploadUrlAsync_ClaimNotFound_ThrowsKeyNotFoundException()
+    {
+        _claimRepoMock.Setup(r => r.GetByIdAsync("missing", "cust-1"))
+            .ReturnsAsync((Claim?)null);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _sut.GeneratePhotoUploadUrlAsync("missing", "cust-1", "photo.jpg"));
+    }
+
+    [Fact]
+    public async Task GeneratePhotoUploadUrlAsync_ReturnsUploadUrl_AndUpdatesClaim()
+    {
+        var claim = new Claim { Id = "c1", CustomerId = "cust-1", Status = "FNOL", PhotosBlobPaths = new() };
+        _claimRepoMock.Setup(r => r.GetByIdAsync("c1", "cust-1")).ReturnsAsync(claim);
+        _blobServiceMock.Setup(b => b.GenerateSasUploadUrlAsync("c1", "photo.jpg"))
+            .ReturnsAsync(("https://storage.example.com/sas", "c1/photo.jpg"));
+        _claimRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Claim>())).ReturnsAsync((Claim c) => c);
+
+        var (sasUrl, blobPath, expiresAt) = await _sut.GeneratePhotoUploadUrlAsync("c1", "cust-1", "photo.jpg");
+
+        Assert.Equal("https://storage.example.com/sas", sasUrl);
+        Assert.Equal("c1/photo.jpg", blobPath);
+        Assert.Contains("c1/photo.jpg", claim.PhotosBlobPaths);
+        _claimRepoMock.Verify(r => r.UpdateAsync(claim), Times.Once);
+    }
+
+    [Fact]
+    public async Task AssignAdjusterAsync_ClaimNotFound_ThrowsKeyNotFoundException()
+    {
+        var adjuster = new Adjuster { Id = "adj-001", Name = "Jane Smith" };
+        _adjusterRepoMock.Setup(r => r.GetByIdAsync("adj-001")).ReturnsAsync(adjuster);
+        _claimRepoMock.Setup(r => r.GetByIdCrossPartitionAsync("missing"))
+            .ReturnsAsync((Claim?)null);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _sut.AssignAdjusterAsync("missing", "adj-001"));
+    }
+
+    [Fact]
+    public async Task AssignAdjusterAsync_SuccessfullyAssigns_AndUpdatesClaim()
+    {
+        var adjuster = new Adjuster { Id = "adj-001", Name = "Jane Smith" };
+        var claim = new Claim { Id = "c1", CustomerId = "cust-1", Status = "UnderReview" };
+        _adjusterRepoMock.Setup(r => r.GetByIdAsync("adj-001")).ReturnsAsync(adjuster);
+        _claimRepoMock.Setup(r => r.GetByIdCrossPartitionAsync("c1")).ReturnsAsync(claim);
+        _claimRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Claim>())).ReturnsAsync((Claim c) => c);
+
+        var result = await _sut.AssignAdjusterAsync("c1", "adj-001");
+
+        Assert.Equal("adj-001", result.AdjusterId);
+        _claimRepoMock.Verify(r => r.UpdateAsync(claim), Times.Once);
+    }
 }
