@@ -79,9 +79,16 @@ builder.Services.AddHttpClient<FractureGuard.Api.Services.INotifierService, Frac
 builder.Services.AddSingleton<FractureGuard.Api.Services.IAnalysisJobService, FractureGuard.Api.Services.AnalysisJobService>();
 builder.Services.AddHostedService<FractureGuard.Api.Services.AnalysisResultConsumer>();
 
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.WithOrigins("http://localhost:4200")
+     .AllowAnyHeader()
+     .AllowAnyMethod()
+     .AllowCredentials()));
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

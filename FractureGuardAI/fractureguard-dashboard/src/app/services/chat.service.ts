@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { ChatMessage } from '../models/chat.model';
 
-const DEV_JWT = 'dev-engineer-token'; // TODO: replace with MSAL token in prod
+const DEV_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXYtdXNlciIsInJvbGVzIjpbIlNpdGVFbmdpbmVlciJdfQ.rqx1SL9ivj7AhQdlQNuE_kT4SxhT5KH0jHflnrHlNFA'; // dev HS256 JWT — SiteEngineer role
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
