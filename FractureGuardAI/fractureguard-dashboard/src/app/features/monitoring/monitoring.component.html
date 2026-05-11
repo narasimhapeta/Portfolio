@@ -1,41 +1,69 @@
-<div class="dashboard" [class.at-risk]="atRisk()">
+<div class="layout" [class.at-risk]="atRisk()">
 
-  @if (activeAlert()) {
-    <div class="alert-banner">
-      <strong>AI RISK ALERT</strong>
-      {{ activeAlert()?.content }}
-      <button class="dismiss" (click)="dismissAlert()">&#x2715;</button>
-    </div>
-  }
+  <!-- ── Left Sidebar: brand + KPIs ── -->
+  <aside class="sidebar">
 
-  @if (reading(); as r) {
-    <div class="kpi-grid">
-      <div class="kpi-card" [class.danger]="r.pressure_psi > 950">
-        <span class="label">Pressure</span>
-        <span class="value">{{ r.pressure_psi | number:'1.0-0' }} PSI</span>
-      </div>
-      <div class="kpi-card">
-        <span class="label">Flow Rate</span>
-        <span class="value">{{ r.flow_rate_bpm | number:'1.1-1' }} BPM</span>
-      </div>
-      <div class="kpi-card" [class.danger]="r.vibration_g > 2.5">
-        <span class="label">Vibration</span>
-        <span class="value">{{ r.vibration_g | number:'1.2-2' }} g</span>
-      </div>
-      <div class="kpi-card">
-        <span class="label">Temperature</span>
-        <span class="value">{{ r.temperature_c | number:'1.1-1' }} &#176;C</span>
+    <div class="brand">
+      <div class="brand-icon">⛽</div>
+      <div>
+        <div class="brand-name">FractureGuard AI</div>
+        <div class="brand-sub">Fracturing Safety Monitor</div>
       </div>
     </div>
-  } @else {
-    <p class="connecting">Connecting to sensor stream...</p>
-  }
 
-  <button class="chat-toggle" (click)="toggleChat()">
-    {{ showChat ? 'Close AI Chat' : 'Ask AI Analyst' }}
-  </button>
+    @if (activeAlert()) {
+      <div class="alert-banner">
+        <span class="alert-dot"></span>
+        <div class="alert-body">
+          <strong>RISK ALERT</strong>
+          <p>{{ activeAlert()?.content }}</p>
+        </div>
+        <button class="dismiss" (click)="dismissAlert()">✕</button>
+      </div>
+    }
 
-  @if (showChat) {
+    <div class="section-label">Live Sensor Readings</div>
+
+    @if (reading(); as r) {
+      <div class="kpi-list">
+        <div class="kpi-card" [class.danger]="r.pressure_psi > 950">
+          <div class="kpi-label">Pressure</div>
+          <div class="kpi-value">{{ r.pressure_psi | number:'1.0-0' }}<span class="unit">PSI</span></div>
+          <div class="kpi-bar-track"><div class="kpi-bar" [style.width.%]="(r.pressure_psi / 1200) * 100"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Flow Rate</div>
+          <div class="kpi-value">{{ r.flow_rate_bpm | number:'1.1-1' }}<span class="unit">BPM</span></div>
+          <div class="kpi-bar-track"><div class="kpi-bar" [style.width.%]="(r.flow_rate_bpm / 20) * 100"></div></div>
+        </div>
+        <div class="kpi-card" [class.danger]="r.vibration_g > 2.5">
+          <div class="kpi-label">Vibration</div>
+          <div class="kpi-value">{{ r.vibration_g | number:'1.2-2' }}<span class="unit">g</span></div>
+          <div class="kpi-bar-track"><div class="kpi-bar" [style.width.%]="(r.vibration_g / 5) * 100"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Temperature</div>
+          <div class="kpi-value">{{ r.temperature_c | number:'1.1-1' }}<span class="unit">°C</span></div>
+          <div class="kpi-bar-track"><div class="kpi-bar" [style.width.%]="(r.temperature_c / 100) * 100"></div></div>
+        </div>
+      </div>
+    } @else {
+      <div class="connecting">
+        <div class="pulse"></div>
+        Connecting to sensor stream...
+      </div>
+    }
+
+    <div class="sidebar-footer">
+      <span class="live-dot"></span>
+      Live · Updates every 2s
+    </div>
+
+  </aside>
+
+  <!-- ── Right: Chat ── -->
+  <main class="chat-area">
     <app-chat-panel />
-  }
+  </main>
+
 </div>

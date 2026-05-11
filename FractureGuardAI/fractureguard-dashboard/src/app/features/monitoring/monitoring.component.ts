@@ -9,19 +9,17 @@ import { ChatPanelComponent } from '../chat/chat-panel.component';
   standalone: true,
   imports: [CommonModule, ChatPanelComponent],
   templateUrl: './monitoring.component.html',
+  styleUrl: './monitoring.component.css',
 })
 export class MonitoringComponent {
-  protected telemetry  = inject(TelemetryService);
-  protected alerts     = inject(AlertService);
-
-  protected reading    = this.telemetry.latestReading;
-  protected atRisk     = computed(() => {
+  protected telemetry   = inject(TelemetryService);
+  protected alerts      = inject(AlertService);
+  protected reading     = this.telemetry.latestReading;
+  protected atRisk      = computed(() => {
     const r = this.reading();
     return r ? this.telemetry.isAtRisk(r) : false;
   });
   protected activeAlert = this.alerts.latestAlert;
-  protected showChat    = false;
 
-  toggleChat() { this.showChat = !this.showChat; }
   dismissAlert() { this.alerts.clearAlert(); }
 }
