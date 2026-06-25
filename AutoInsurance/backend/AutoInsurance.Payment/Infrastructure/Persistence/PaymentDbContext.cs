@@ -1,4 +1,5 @@
 using AutoInsurance.Domain.Payment;
+using AutoInsurance.Domain.Policy;
 using AutoInsurance.Migrations;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ public class PaymentDbContext : DbContext
 
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
     public DbSet<BillingSchedule> BillingSchedules => Set<BillingSchedule>();
+    public DbSet<Policy> Policies => Set<Policy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

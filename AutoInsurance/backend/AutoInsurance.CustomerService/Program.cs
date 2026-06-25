@@ -1,4 +1,9 @@
+using AutoInsurance.CustomerService.Application.Commands.LinkAccount;
 using AutoInsurance.CustomerService.Infrastructure.Persistence;
+using AutoInsurance.CustomerService.Infrastructure.Persistence.Repositories;
+using AutoInsurance.Shared.Interfaces;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -13,6 +18,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<CustomerServiceDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddHealthChecks().AddDbContextCheck<CustomerServiceDbContext>();
+
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<LinkAccountCommand>());
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<LinkAccountCommand>();
+
+builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
