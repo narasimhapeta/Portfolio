@@ -1,0 +1,6 @@
+@AutoInsurance.Gateway_HostAddress = http://localhost:5096
+
+GET {{AutoInsurance.Gateway_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
