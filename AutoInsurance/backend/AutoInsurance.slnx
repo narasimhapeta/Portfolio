@@ -1,7 +1,9 @@
 <Solution>
+  <Project Path="AutoInsurance.Claims.Tests/AutoInsurance.Claims.Tests.csproj" />
   <Project Path="AutoInsurance.Claims/AutoInsurance.Claims.csproj" />
   <Project Path="AutoInsurance.CustomerService.Tests/AutoInsurance.CustomerService.Tests.csproj" />
   <Project Path="AutoInsurance.CustomerService/AutoInsurance.CustomerService.csproj" />
+  <Project Path="AutoInsurance.DocumentGeneration.Tests/AutoInsurance.DocumentGeneration.Tests.csproj" />
   <Project Path="AutoInsurance.DocumentGeneration/AutoInsurance.DocumentGeneration.csproj" />
   <Project Path="AutoInsurance.Domain/AutoInsurance.Domain.csproj" />
   <Project Path="AutoInsurance.Gateway.Tests/AutoInsurance.Gateway.Tests.csproj" />

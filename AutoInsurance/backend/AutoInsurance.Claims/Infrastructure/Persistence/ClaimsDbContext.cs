@@ -1,4 +1,5 @@
 using AutoInsurance.Domain.Claims;
+using AutoInsurance.Domain.Policy;
 using AutoInsurance.Migrations;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ public class ClaimsDbContext : DbContext
 
     public DbSet<Claim> Claims => Set<Claim>();
     public DbSet<ClaimDocument> ClaimDocuments => Set<ClaimDocument>();
+    public DbSet<Policy> Policies => Set<Policy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
