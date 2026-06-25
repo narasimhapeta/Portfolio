@@ -3,11 +3,14 @@ WORKDIR /src
 COPY ["AutoInsurance.Shared/AutoInsurance.Shared.csproj", "AutoInsurance.Shared/"]
 COPY ["AutoInsurance.Domain/AutoInsurance.Domain.csproj", "AutoInsurance.Domain/"]
 COPY ["AutoInsurance.Migrations/AutoInsurance.Migrations.csproj", "AutoInsurance.Migrations/"]
-RUN dotnet restore "AutoInsurance.Migrations/AutoInsurance.Migrations.csproj"
+COPY ["AutoInsurance.QuoteBuy/AutoInsurance.QuoteBuy.csproj", "AutoInsurance.QuoteBuy/"]
+RUN dotnet restore "AutoInsurance.QuoteBuy/AutoInsurance.QuoteBuy.csproj"
 COPY . .
-RUN dotnet publish "AutoInsurance.Migrations/AutoInsurance.Migrations.csproj" -c Release -o /app/publish
+RUN dotnet publish "AutoInsurance.QuoteBuy/AutoInsurance.QuoteBuy.csproj" -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "AutoInsurance.Migrations.dll"]
+EXPOSE 5001
+ENV ASPNETCORE_URLS=http://+:5001
+ENTRYPOINT ["dotnet", "AutoInsurance.QuoteBuy.dll"]

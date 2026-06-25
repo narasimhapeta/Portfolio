@@ -1,0 +1,6 @@
+@AutoInsurance.Payment_HostAddress = http://localhost:5171
+
+GET {{AutoInsurance.Payment_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

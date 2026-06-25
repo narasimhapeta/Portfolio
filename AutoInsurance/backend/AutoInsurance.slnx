@@ -1,5 +1,13 @@
 <Solution>
+  <Project Path="AutoInsurance.Claims/AutoInsurance.Claims.csproj" />
+  <Project Path="AutoInsurance.CustomerService/AutoInsurance.CustomerService.csproj" />
+  <Project Path="AutoInsurance.DocumentGeneration/AutoInsurance.DocumentGeneration.csproj" />
   <Project Path="AutoInsurance.Domain/AutoInsurance.Domain.csproj" />
+  <Project Path="AutoInsurance.Gateway.Tests/AutoInsurance.Gateway.Tests.csproj" />
+  <Project Path="AutoInsurance.Gateway/AutoInsurance.Gateway.csproj" />
+  <Project Path="AutoInsurance.Migrations/AutoInsurance.Migrations.csproj" />
+  <Project Path="AutoInsurance.Payment/AutoInsurance.Payment.csproj" />
+  <Project Path="AutoInsurance.QuoteBuy/AutoInsurance.QuoteBuy.csproj" />
   <Project Path="AutoInsurance.Shared.Tests/AutoInsurance.Shared.Tests.csproj" />
   <Project Path="AutoInsurance.Shared/AutoInsurance.Shared.csproj" />
 </Solution>

@@ -1,0 +1,6 @@
+@AutoInsurance.QuoteBuy_HostAddress = http://localhost:5220
+
+GET {{AutoInsurance.QuoteBuy_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

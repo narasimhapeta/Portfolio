@@ -1,0 +1,133 @@
+services:
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "${DB_PASSWORD:-AutoIns@2026!}"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '${DB_PASSWORD:-AutoIns@2026!}' -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "10000:10000"
+    command: "azurite-blob --blobHost 0.0.0.0"
+
+  migrations:
+    build:
+      context: ./backend
+      dockerfile: AutoInsurance.Migrations/Dockerfile
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=AutoInsurance;User Id=sa;Password=${DB_PASSWORD:-AutoIns@2026!};TrustServerCertificate=True"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  quote-buy-api:
+    build:
+      context: ./backend
+      dockerfile: AutoInsurance.QuoteBuy/Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=AutoInsurance;User Id=sa;Password=${DB_PASSWORD:-AutoIns@2026!};TrustServerCertificate=True"
+      Auth__Mode: "${AUTH_MODE:-mock}"
+      ASPNETCORE_URLS: "http://+:5001"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
+  customer-svc-api:
+    build:
+      context: ./backend
+      dockerfile: AutoInsurance.CustomerService/Dockerfile
+    ports:
+      - "5002:5002"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=AutoInsurance;User Id=sa;Password=${DB_PASSWORD:-AutoIns@2026!};TrustServerCertificate=True"
+      Auth__Mode: "${AUTH_MODE:-mock}"
+      ASPNETCORE_URLS: "http://+:5002"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
+  payment-api:
+    build:
+      context: ./backend
+      dockerfile: AutoInsurance.Payment/Dockerfile
+    ports:
+      - "5003:5003"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=AutoInsurance;User Id=sa;Password=${DB_PASSWORD:-AutoIns@2026!};TrustServerCertificate=True"
+      Auth__Mode: "${AUTH_MODE:-mock}"
+      ASPNETCORE_URLS: "http://+:5003"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
+  document-api:
+    build:
+      context: ./backend
+      dockerfile: AutoInsurance.DocumentGeneration/Dockerfile
+    ports:
+      - "5004:5004"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=AutoInsurance;User Id=sa;Password=${DB_PASSWORD:-AutoIns@2026!};TrustServerCertificate=True"
+      Auth__Mode: "${AUTH_MODE:-mock}"
+      BlobStorage__Endpoint: "http://azurite:10000"
+      BlobStorage__AccountName: "devstoreaccount1"
+      BlobStorage__AccountKey: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KokUvZFODyA=="
+      Email__Mode: "${EMAIL_MODE:-log}"
+      ASPNETCORE_URLS: "http://+:5004"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      azurite:
+        condition: service_started
+
+  claims-api:
+    build:
+      context: ./backend
+      dockerfile: AutoInsurance.Claims/Dockerfile
+    ports:
+      - "5005:5005"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=AutoInsurance;User Id=sa;Password=${DB_PASSWORD:-AutoIns@2026!};TrustServerCertificate=True"
+      Auth__Mode: "${AUTH_MODE:-mock}"
+      BlobStorage__Endpoint: "http://azurite:10000"
+      BlobStorage__AccountName: "devstoreaccount1"
+      BlobStorage__AccountKey: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KokUvZFODyA=="
+      ASPNETCORE_URLS: "http://+:5005"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      azurite:
+        condition: service_started
+
+  gateway:
+    build:
+      context: ./backend/AutoInsurance.Gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      Auth__Mode: "${AUTH_MODE:-mock}"
+      ASPNETCORE_URLS: "http://+:8080"
+    depends_on:
+      - quote-buy-api
+      - customer-svc-api
+      - payment-api
+      - document-api
+      - claims-api
+
+volumes:
+  sqlserver_data:

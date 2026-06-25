@@ -1,0 +1,6 @@
+@AutoInsurance.DocumentGeneration_HostAddress = http://localhost:5182
+
+GET {{AutoInsurance.DocumentGeneration_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
