@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AutoInsurance.Shared.Tests/AutoInsurance.Shared.Tests.csproj" />
+  <Project Path="AutoInsurance.Shared/AutoInsurance.Shared.csproj" />
+</Solution>
