@@ -1,4 +1,10 @@
+using AutoInsurance.QuoteBuy.Application.Commands.CreateQuote;
 using AutoInsurance.QuoteBuy.Infrastructure.Persistence;
+using AutoInsurance.QuoteBuy.Infrastructure.Persistence.Repositories;
+using AutoInsurance.QuoteBuy.Infrastructure.Services;
+using AutoInsurance.Shared.Interfaces;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -13,6 +19,15 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<QuoteBuyDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddHealthChecks().AddDbContextCheck<QuoteBuyDbContext>();
+
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateQuoteCommand>());
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateQuoteCommandValidator>();
+
+builder.Services.AddScoped<IQuoteRepository, QuoteRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddSingleton<IQuoteNumberGenerator, QuoteNumberGenerator>();
+
 builder.Services.AddControllers();
 
 var app = builder.Build();

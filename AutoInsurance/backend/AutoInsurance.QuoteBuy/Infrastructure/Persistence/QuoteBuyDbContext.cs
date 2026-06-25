@@ -1,3 +1,4 @@
+using AutoInsurance.Domain.Policy;
 using AutoInsurance.Domain.Quote;
 using AutoInsurance.Migrations;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,11 @@ public class QuoteBuyDbContext : DbContext
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<CoverageType> CoverageTypes => Set<CoverageType>();
     public DbSet<QuoteCoverage> QuoteCoverages => Set<QuoteCoverage>();
+
+    public DbSet<Policy> Policies => Set<Policy>();
+    public DbSet<PolicyDriver> PolicyDrivers => Set<PolicyDriver>();
+    public DbSet<PolicyVehicle> PolicyVehicles => Set<PolicyVehicle>();
+    public DbSet<PolicyCoverage> PolicyCoverages => Set<PolicyCoverage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
