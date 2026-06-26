@@ -1,0 +1,30 @@
+# Visual Studio IDE
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+bin/
+obj/
+
+# Node
+node_modules/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code
+.claudeignore
+Prompt.txt
+
+# Secrets
+.env
+.env.local
+*.pfx
+*.p12
