@@ -1,14 +1,25 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
-import { persistReducer, persistStore } from 'redux-persist';
+import { createTransform, persistReducer, persistStore } from 'redux-persist';
 import { quoteApi } from '../api/quoteApi';
 import { paymentApi } from '../api/paymentApi';
 import quoteReducer from './quoteSlice';
-import { encryptedStorage, STORAGE_KEY } from './encryptedStorage';
+import type { QuoteState } from './quoteSlice';
+
+const safeQuoteTransform = createTransform<QuoteState, Pick<QuoteState, 'session' | 'policy' | 'currentStep'>>(
+  ({ session, policy, currentStep }) => ({ session, policy, currentStep }),
+  (state) => state as QuoteState,
+  { whitelist: ['quote'] },
+);
 
 const persistConfig = {
-  key: STORAGE_KEY,
-  storage: encryptedStorage,
+  key: 'qb_state',
+  storage: {
+    getItem: (key: string) => localStorage.getItem(key),
+    setItem: (key: string, value: string) => { localStorage.setItem(key, value); },
+    removeItem: (key: string) => { localStorage.removeItem(key); },
+  },
   whitelist: ['quote'],
+  transforms: [safeQuoteTransform],
 };
 
 const rootReducer = combineReducers({

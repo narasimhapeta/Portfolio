@@ -5,7 +5,6 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useResumeQuoteMutation } from '../api/quoteApi';
 import { setSession, setStep } from '../store/quoteSlice';
-import { setEncryptionKey } from '../store/encryptedStorage';
 import QuoteLayout from '../components/QuoteLayout';
 import FormField, { Input } from '../components/FormField';
 
@@ -27,7 +26,6 @@ export default function ResumePage() {
   const onSubmit = async (data: FormData) => {
     try {
       const res = await resumeQuote(data).unwrap();
-      setEncryptionKey(res.quoteNumber, data.zipCode);
       dispatch(setSession({
         quoteId: res.quoteId,
         quoteNumber: res.quoteNumber,

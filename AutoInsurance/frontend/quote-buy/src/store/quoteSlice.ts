@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Driver, PersonalInfo, PolicyBound, QuoteSession, ReviewData, SelectedCoverage, Vehicle } from '../types/quote';
 
-interface QuoteState {
+export interface QuoteState {
   session: QuoteSession | null;
   personalInfo: PersonalInfo | null;
   drivers: Driver[];

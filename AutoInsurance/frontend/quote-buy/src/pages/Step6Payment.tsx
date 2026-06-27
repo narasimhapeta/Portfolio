@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useInitiatePaymentMutation, useConfirmPaymentMutation } from '../api/paymentApi';
+import { useGetReviewQuery } from '../api/quoteApi';
 import { setStep } from '../store/quoteSlice';
 import type { RootState } from '../store';
 import QuoteLayout from '../components/QuoteLayout';
@@ -12,7 +13,8 @@ export default function Step6Payment() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const policy = useSelector((s: RootState) => s.quote.policy);
-  const review = useSelector((s: RootState) => s.quote.review);
+  const session = useSelector((s: RootState) => s.quote.session);
+  const { data: review } = useGetReviewQuery(session?.quoteId ?? '', { skip: !session });
   const [initiatePayment] = useInitiatePaymentMutation();
   const [confirmPayment] = useConfirmPaymentMutation();
 
@@ -28,7 +30,7 @@ export default function Step6Payment() {
       .unwrap()
       .then(res => { setPaymentIntentId(res.paymentIntentId); setAmount(res.amount); setPhase('ready'); })
       .catch(() => { setPhase('error'); setErrorMsg('Failed to initiate payment.'); });
-  }, [policy?.policyId]);
+  }, [policy?.policyId, review?.annualPremium]);
 
   const onConfirm = async () => {
     if (!policy || !paymentIntentId) return;

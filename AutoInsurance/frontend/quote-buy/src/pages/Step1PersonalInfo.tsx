@@ -5,7 +5,6 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useCreateQuoteMutation } from '../api/quoteApi';
 import { setSession, setPersonalInfo, setStep } from '../store/quoteSlice';
-import { setEncryptionKey } from '../store/encryptedStorage';
 import QuoteLayout from '../components/QuoteLayout';
 import FormField, { Input, Select } from '../components/FormField';
 
@@ -35,7 +34,6 @@ export default function Step1PersonalInfo() {
   const onSubmit = async (data: FormData) => {
     try {
       const res = await createQuote(data).unwrap();
-      setEncryptionKey(res.quoteNumber, data.zipCode);
       dispatch(setSession({ quoteId: res.quoteId, quoteNumber: res.quoteNumber, sessionToken: res.sessionToken, zipCode: data.zipCode, stepReached: res.stepReached }));
       dispatch(setPersonalInfo(data));
       dispatch(setStep(2));

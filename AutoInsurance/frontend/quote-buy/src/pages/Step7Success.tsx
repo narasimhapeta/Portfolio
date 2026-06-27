@@ -1,8 +1,8 @@
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useGetReviewQuery } from '../api/quoteApi';
 import { resetQuote } from '../store/quoteSlice';
-import { clearEncryptionKey } from '../store/encryptedStorage';
 import type { RootState } from '../store';
 import QuoteLayout from '../components/QuoteLayout';
 
@@ -10,10 +10,10 @@ export default function Step7Success() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const policy = useSelector((s: RootState) => s.quote.policy);
-  const review = useSelector((s: RootState) => s.quote.review);
+  const session = useSelector((s: RootState) => s.quote.session);
+  const { data: review } = useGetReviewQuery(session?.quoteId ?? '', { skip: !session });
 
   const startNew = () => {
-    clearEncryptionKey();
     dispatch(resetQuote());
     navigate('/');
   };
