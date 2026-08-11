@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
+
 from claims_assistant.main import create_app
+
 
 def test_health_check():
     client = TestClient(create_app())

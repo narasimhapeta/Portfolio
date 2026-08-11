@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from claims_assistant.api.health import router as health_router
 
 

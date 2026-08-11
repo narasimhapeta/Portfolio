@@ -1,5 +1,4 @@
 # tests/test_config.py
-import os
 
 from claims_assistant.config import Settings, get_settings
 
