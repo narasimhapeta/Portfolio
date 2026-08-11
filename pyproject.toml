@@ -29,3 +29,9 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.2",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: requires external services (e.g. Postgres) to be running",
+]
+
