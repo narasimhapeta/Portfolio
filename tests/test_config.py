@@ -19,6 +19,9 @@ def test_settings_reads_from_env(monkeypatch):
     assert settings.postgres_dsn == (
         "postgresql://testuser:testpass@db.example:5433/testdb"
     )
+    assert settings.postgres_async_dsn == (
+        "postgresql+asyncpg://testuser:testpass@db.example:5433/testdb"
+    )
 
 
 def test_get_settings_is_cached():
