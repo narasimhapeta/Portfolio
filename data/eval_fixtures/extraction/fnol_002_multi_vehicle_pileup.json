@@ -1,0 +1,18 @@
+{
+  "incident_datetime": "2025-07-28T08:10",
+  "location": "I-45 northbound near Conroe, TX",
+  "parties": [
+    {"role": "policyholder", "name": "Derek Owusu", "contact": null},
+    {"role": "other_driver", "name": "Wendy Sato", "contact": null},
+    {"role": "other_driver", "name": "Marcus Webb", "contact": null}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Ford F-150"},
+    {"role": "other_vehicle", "vin": null, "description": "gray Nissan Altima"},
+    {"role": "other_vehicle", "vin": null, "description": "Marcus Webb's SUV"},
+    {"role": "other_vehicle", "vin": null, "description": "delivery van"}
+  ],
+  "injuries": false,
+  "injury_description": null,
+  "narrative_summary": "Four-vehicle chain-reaction crash on I-45 northbound near Conroe, TX during heavy fog; policyholder's truck struck a stopped Nissan Altima ahead and was struck from behind by an SUV, which was itself struck by a delivery van. No injuries reported."
+}

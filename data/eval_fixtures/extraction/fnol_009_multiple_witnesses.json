@@ -1,0 +1,16 @@
+{
+  "incident_datetime": "2025-03-22T16:40",
+  "location": "Main St, Austin, TX",
+  "parties": [
+    {"role": "policyholder", "name": "Robert Kessler", "contact": null},
+    {"role": "pedestrian", "name": "Maria Delgado", "contact": null},
+    {"role": "witness", "name": "Dana Fields", "contact": null},
+    {"role": "witness", "name": "Omar Haddad", "contact": null}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Chevrolet Equinox"}
+  ],
+  "injuries": true,
+  "injury_description": "Pedestrian complained of left ankle pain after being struck at low speed; evaluated by paramedics at the scene.",
+  "narrative_summary": "Policyholder's vehicle struck a pedestrian who entered a crosswalk against the signal on Main St, Austin, TX; pedestrian reported ankle pain and was checked by paramedics. Two independent witnesses corroborated the pedestrian entered against the signal."
+}

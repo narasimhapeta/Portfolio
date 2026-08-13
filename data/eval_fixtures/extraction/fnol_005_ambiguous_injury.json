@@ -1,0 +1,15 @@
+{
+  "incident_datetime": "2025-06-20T12:15",
+  "location": "Westheimer Rd, Houston, TX",
+  "parties": [
+    {"role": "policyholder", "name": "Angela Brooks", "contact": null},
+    {"role": "other_driver", "name": "Todd Reyes", "contact": "713-555-0198"}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Honda Accord"},
+    {"role": "other_vehicle", "vin": null, "description": "black pickup truck"}
+  ],
+  "injuries": true,
+  "injury_description": "Policyholder reported neck stiffness following the collision but did not seek medical attention and described it as minor/uncertain.",
+  "narrative_summary": "Low-speed rear-end collision on Westheimer Rd, Houston, TX; minor bumper dent and policyholder reports mild, unconfirmed neck stiffness with no medical treatment sought."
+}

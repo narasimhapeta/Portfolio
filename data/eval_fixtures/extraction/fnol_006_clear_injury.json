@@ -1,0 +1,16 @@
+{
+  "incident_datetime": "2025-08-15T18:50",
+  "location": "Flatbush Ave and Church Ave, Brooklyn, NY",
+  "parties": [
+    {"role": "policyholder", "name": "Samantha Cruz", "contact": null},
+    {"role": "passenger", "name": "Tomas Cruz", "contact": null},
+    {"role": "other_driver", "name": "Greg Halloran", "contact": null}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Hyundai Sonata"},
+    {"role": "other_vehicle", "vin": null, "description": "delivery truck"}
+  ],
+  "injuries": true,
+  "injury_description": "Passenger Tomas Cruz struck his head on the window and was bleeding; transported by ambulance to Kings County Hospital.",
+  "narrative_summary": "Delivery truck ran a stop sign and broadsided policyholder's vehicle at Flatbush Ave and Church Ave, Brooklyn, NY; passenger sustained a head injury and was taken to the hospital by ambulance. Other driver admitted fault at the scene."
+}

@@ -1,0 +1,13 @@
+{
+  "incident_datetime": "2025-11-05T13:20",
+  "location": "Stonestown Galleria parking lot, San Francisco, CA",
+  "parties": [
+    {"role": "policyholder", "name": "Priya Natarajan", "contact": null}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Jeep Grand Cherokee"}
+  ],
+  "injuries": false,
+  "injury_description": null,
+  "narrative_summary": "Single-vehicle incident: policyholder backed into a concrete parking barrier at a shopping center parking lot in San Francisco, CA, denting the rear bumper. No other parties involved, no injuries."
+}
