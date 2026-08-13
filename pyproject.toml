@@ -35,6 +35,7 @@ dev = [
 markers = [
     "integration: requires external services (e.g. Postgres) to be running",
 ]
+asyncio_default_test_loop_scope = "session"
 
 [tool.ruff]
 line-length = 100

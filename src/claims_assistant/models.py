@@ -25,8 +25,8 @@ class Policy(Base):
     expiration_date: Mapped[datetime.date]
     premium_monthly: Mapped[float]
 
-    vehicles: Mapped[list["Vehicle"]] = relationship(back_populates="policy")
-    claims: Mapped[list["ClaimHistory"]] = relationship(back_populates="policy")
+    vehicles: Mapped[list[Vehicle]] = relationship(back_populates="policy")
+    claims: Mapped[list[ClaimHistory]] = relationship(back_populates="policy")
 
 
 class Vehicle(Base):
@@ -39,7 +39,7 @@ class Vehicle(Base):
     year: Mapped[int]
     market_value_usd: Mapped[float]
 
-    policy: Mapped["Policy"] = relationship(back_populates="vehicles")
+    policy: Mapped[Policy] = relationship(back_populates="vehicles")
 
 
 class ClaimHistory(Base):
@@ -57,4 +57,4 @@ class ClaimHistory(Base):
     status: Mapped[str]
     fraud_flag: Mapped[bool] = mapped_column(default=False)
 
-    policy: Mapped["Policy"] = relationship(back_populates="claims")
+    policy: Mapped[Policy] = relationship(back_populates="claims")

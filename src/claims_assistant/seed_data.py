@@ -277,9 +277,9 @@ async def seed_database() -> dict[str, int]:
         await session.execute(delete(ClaimHistory))
         await session.execute(delete(Vehicle))
         await session.execute(delete(Policy))
-        session.add_all(Policy(**row) for row in POLICIES)  # type: ignore[arg-type]
-        session.add_all(Vehicle(**row) for row in VEHICLES)  # type: ignore[arg-type]
-        session.add_all(ClaimHistory(**row) for row in CLAIMS)  # type: ignore[arg-type]
+        session.add_all(Policy(**row) for row in POLICIES)  
+        session.add_all(Vehicle(**row) for row in VEHICLES)  
+        session.add_all(ClaimHistory(**row) for row in CLAIMS)  
     return {
         "policies": len(POLICIES),
         "vehicles": len(VEHICLES),
