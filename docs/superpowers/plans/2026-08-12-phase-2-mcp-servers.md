@@ -904,11 +904,13 @@ git commit -m "feat: add vin-vehicle-mcp server"
 
 ## Definition of Done for Phase 2
 
-- [ ] `uv run pytest -v -m "not integration"` passes with no Postgres running (only the `mcp` import smoke test applies here; everything else in this phase is integration-marked since it needs seeded data).
-- [ ] `docker-compose up -d postgres` then `uv run pytest -v -m integration` passes — repo-layer and MCP-client protocol tests for all three servers, plus Phase 0/1's existing integration tests.
-- [ ] Each server has been called at least once with a real MCP client against seeded data (the automated `stdio_client`/`ClientSession` tests above satisfy this; the optional `mcp dev` Inspector steps are a hands-on bonus, not required).
-- [ ] `uv run ruff check .` and `uv run mypy src` both pass clean.
-- [ ] Roadmap doc's Phase 2 checkbox is checked off.
-- [ ] Everything above is committed.
+- [x] `uv run pytest -v -m "not integration"` passes with no Postgres running (only the `mcp` import smoke test applies here; everything else in this phase is integration-marked since it needs seeded data).
+- [x] `docker-compose up -d postgres` then `uv run pytest -v -m integration` passes — repo-layer and MCP-client protocol tests for all three servers, plus Phase 0/1's existing integration tests. (19 passed, 27.45s.)
+- [x] Each server has been called at least once with a real MCP client against seeded data (the automated `stdio_client`/`ClientSession` tests above satisfy this; the optional `mcp dev` Inspector steps were also used as a hands-on double-check).
+- [x] `uv run ruff check .` and `uv run mypy src` both pass clean.
+- [x] Roadmap doc's Phase 2 checkbox is checked off.
+- [x] Everything above is committed.
+
+**Note (implementation deviation from plan):** the plan assumed the `mcp` Python SDK's pre-2.0 API (`mcp.server.fastmcp.FastMCP`, camelCase `CallToolResult.isError`/`.structuredContent`). `uv add "mcp[cli]"` resolved the newest release, `2.0.0`, which restructured the SDK: the server-building class moved to `mcp.server.MCPServer`, and `CallToolResult`'s Python-side Pydantic fields are snake_case (`is_error`, `structured_content`), with the camelCase names surviving only as JSON wire-protocol aliases. Diagnosed by reading the installed package directly (`.venv/Lib/site-packages/mcp`) rather than guessing; the plan was corrected throughout before Task 1 completed, and Global Constraints records the confirmed API shape for future reference. Separately, `seeded_db` (Task 2) was this project's first `@pytest_asyncio.fixture` — its default per-test loop scope conflicted with `database.py`'s cached module-level `AsyncEngine`, causing cross-loop `RuntimeError`s on the second test onward. Fixed by adding `asyncio_default_fixture_loop_scope = "session"` to `pyproject.toml` alongside Phase 1's existing `asyncio_default_test_loop_scope = "session"`, so fixtures and tests share the one session-long event loop. See commits "fix: scope async fixtures to the session event loop, not just tests" and the three "feat: add \*-mcp server" commits.
 
 Once this is done, update [the roadmap](2026-08-10-roadmap.md) status and we write the Phase 3 (Extraction Agent) plan next — it will be the first agent, wired to the Microsoft Agent Framework, and will lean on Phase 1's `FNOLFacts` schema and eval fixtures rather than these MCP servers directly.
