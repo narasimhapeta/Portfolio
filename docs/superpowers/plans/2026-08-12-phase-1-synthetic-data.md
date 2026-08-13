@@ -1408,12 +1408,14 @@ git commit -m "feat: add FNOL extraction eval fixtures with gold JSON"
 
 ## Definition of Done for Phase 1
 
-- [ ] `uv run pytest -v -m "not integration"` passes with no Postgres running (schema/data tests skipped, doc + fixture + schema tests pass).
-- [ ] `docker-compose up -d postgres` then `uv run pytest -v -m integration` passes.
-- [ ] `uv run python scripts/seed_db.py` run against a fresh Postgres reports `{'policies': 9, 'vehicles': 9, 'claims_history': 10}`.
-- [ ] `data/policy_documents/` contains 9 `.md` files; `data/eval_fixtures/extraction/` contains 10 `.txt`/`.json` pairs, both committed.
-- [ ] `uv run ruff check .` and `uv run mypy src` both pass clean.
-- [ ] Roadmap doc's Phase 1 checkbox is checked off.
-- [ ] Everything above is committed.
+- [x] `uv run pytest -v -m "not integration"` passes with no Postgres running (schema/data tests skipped, doc + fixture + schema tests pass).
+- [x] `docker-compose up -d postgres` then `uv run pytest -v -m integration` passes.
+- [x] `uv run python scripts/seed_db.py` run against a fresh Postgres reports `{'policies': 9, 'vehicles': 9, 'claims_history': 10}`.
+- [x] `data/policy_documents/` contains 9 `.md` files; `data/eval_fixtures/extraction/` contains 10 `.txt`/`.json` pairs, both committed.
+- [x] `uv run ruff check .` and `uv run mypy src` both pass clean.
+- [x] Roadmap doc's Phase 1 checkbox is checked off.
+- [x] Everything above is committed.
+
+**Note (implementation deviation from plan):** async integration tests required an additional fix not anticipated in the original plan — pytest-asyncio's default per-test event loop scope doesn't match `database.py`'s module-level cached `AsyncEngine`, causing a `RuntimeError: Event loop is closed` when a second async test reused the cached engine under a new loop. Fixed by setting `asyncio_default_test_loop_scope = "session"` in `pyproject.toml`'s `[tool.pytest.ini_options]`, so all async tests in a run share one event loop — matching how the real app runs under a single long-lived Uvicorn event loop. See commit "fix: use session-scoped event loop for async tests, clean up mypy/ruff findings".
 
 Once this is done, update [the roadmap](2026-08-10-roadmap.md) status and we write the Phase 2 (MCP servers) plan next — it will wrap these same three Postgres tables as `policy-db-mcp`, `claims-history-mcp`, and `vin-vehicle-mcp` tool servers.
