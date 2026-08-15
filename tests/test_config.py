@@ -10,6 +10,10 @@ def test_settings_reads_from_env(monkeypatch):
     monkeypatch.setenv("POSTGRES_DB", "testdb")
     monkeypatch.setenv("POSTGRES_USER", "testuser")
     monkeypatch.setenv("POSTGRES_PASSWORD", "testpass")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("AZURE_OPENAI_CHAT_DEPLOYMENT", "test-deployment")
+    monkeypatch.setenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
 
     settings = Settings()
 
@@ -22,6 +26,10 @@ def test_settings_reads_from_env(monkeypatch):
     assert settings.postgres_async_dsn == (
         "postgresql+asyncpg://testuser:testpass@db.example:5433/testdb"
     )
+    assert settings.azure_openai_endpoint == "https://example.openai.azure.com"
+    assert settings.azure_openai_api_key == "test-key"
+    assert settings.azure_openai_chat_deployment == "test-deployment"
+    assert settings.azure_openai_api_version == "2024-12-01-preview"
 
 
 def test_get_settings_is_cached():

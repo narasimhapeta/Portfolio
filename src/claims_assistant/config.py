@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     postgres_db: str = "claims_assistant"
     postgres_user: str = "claims_assistant"
     postgres_password: str = "devpassword"
+    azure_openai_endpoint: str = ""
+    azure_openai_api_key: str = ""
+    azure_openai_chat_deployment: str = ""
+    azure_openai_api_version: str = "2024-12-01-preview"
 
     @property
     def postgres_dsn(self) -> str:
