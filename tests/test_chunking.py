@@ -24,9 +24,10 @@ def test_chunk_ids_are_deterministic_and_namespaced_by_form_id():
 
     chunks = chunk_policy_document("CA-FULL-COVERAGE", "CA", "full_coverage", text)
 
-    assert chunks[2].chunk_id == "CA-FULL-COVERAGE::section-3-physical-damage-coverage"
-    assert all(c.chunk_id.startswith("CA-FULL-COVERAGE::") for c in chunks)
+    assert chunks[2].chunk_id == "CA-FULL-COVERAGE_section-3-physical-damage-coverage"
+    assert all(c.chunk_id.startswith("CA-FULL-COVERAGE_") for c in chunks)
     assert len({c.chunk_id for c in chunks}) == 7  # all unique
+
 
 
 def test_chunk_content_stays_scoped_to_its_own_section():

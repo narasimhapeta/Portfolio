@@ -36,8 +36,9 @@ def chunk_policy_document(
         if not section.startswith("## "):
             continue
         title_line, _, _ = section.partition("\n")
-        section_title = title_line.removeprefix("## ").strip()
-        chunk_id = f"{form_id}::{_slugify_section_title(section_title)}"
+        section_title = title_line.removeprefix("## ").strip()        
+        chunk_id = f"{form_id}_{_slugify_section_title(section_title)}"
+
         chunks.append(
             PolicyChunk(
                 chunk_id=chunk_id,
