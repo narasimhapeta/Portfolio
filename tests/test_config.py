@@ -16,6 +16,7 @@ def test_settings_reads_from_env(monkeypatch):
     monkeypatch.setenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
     monkeypatch.setenv("AZURE_OPENAI_COVERAGE_DEPLOYMENT", "test-coverage-deployment")
     monkeypatch.setenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "test-embedding-deployment")
+    monkeypatch.setenv("AZURE_OPENAI_FRAUD_DEPLOYMENT", "test-fraud-deployment")
     monkeypatch.setenv("AZURE_SEARCH_ENDPOINT", "https://example.search.windows.net")
     monkeypatch.setenv("AZURE_SEARCH_API_KEY", "test-search-key")
     monkeypatch.setenv("AZURE_SEARCH_INDEX_NAME", "test-policy-documents")
@@ -37,6 +38,7 @@ def test_settings_reads_from_env(monkeypatch):
     assert settings.azure_openai_api_version == "2024-12-01-preview"
     assert settings.azure_openai_coverage_deployment == "test-coverage-deployment"
     assert settings.azure_openai_embedding_deployment == "test-embedding-deployment"
+    assert settings.azure_openai_fraud_deployment == "test-fraud-deployment"
     assert settings.azure_search_endpoint == "https://example.search.windows.net"
     assert settings.azure_search_api_key == "test-search-key"
     assert settings.azure_search_index_name == "test-policy-documents"

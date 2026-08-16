@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     azure_openai_api_version: str = "2024-12-01-preview"
     azure_openai_coverage_deployment: str = ""
     azure_openai_embedding_deployment: str = ""
+    azure_openai_fraud_deployment: str = ""
     azure_search_endpoint: str = ""
     azure_search_api_key: str = ""
     azure_search_index_name: str = "policy-documents"
