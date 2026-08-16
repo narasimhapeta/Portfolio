@@ -4,13 +4,13 @@
 
 **Goal:** Expose Phase 6's `build_claim_intake_workflow()` graph over HTTP: `POST /claims` runs the full pipeline synchronously and persists the outcome, `GET /claims/{id}` reads a persisted outcome back. A real HTTP request through Swagger/Postman runs the full pipeline and returns the structured recommendation (roadmap Phase 7 success criteria).
 
-**Architecture:** POST /claims awaits `workflow.run(intake)` directly in the request/response cycle (confirmed with the project owner: synchronous, not background-task/polling — see rationale below) and persists whichever terminal outcome the graph produced — a `ClaimRecommendation` or a `ClarificationRequest` — to a new `claims` Postgres table, keyed by a server-generated UUID. GET /claims/{id} is a pure read of that table; it never re-runs the pipeline. A new `src/claims_assistant/claims_repository.py` owns the three outcome-shaped INSERT functions plus the one SELECT; a new `src/claims_assistant/api/claims_schema.py` owns the API-facing `ClaimResponse` envelope and the `Claim` ORM row → `ClaimResponse` mapping function; a new `src/claims_assistant/api/claims.py` owns the two routes and nothing else (HTTP concerns only — status codes, dependency wiring, translating a raised exception into a 502). `workflow/graph.py` gains one new function, `get_claim_intake_workflow()`, a zero-arg `@lru_cache` singleton wrapping the already-existing `build_claim_intake_workflow(settings)` — this matches `config.py`'s own `get_settings()` singleton pattern exactly, rather than introducing FastAPI's `lifespan`/`app.state` pattern (unused anywhere else in this project) just for this.
+**Architecture:** POST /claims awaits `workflow.run(intake)` directly in the request/response cycle (confirmed with the project owner: synchronous, not background-task/polling — see rationale below) and persists whichever terminal outcome the graph produced — a `ClaimRecommendation` or a `ClarificationRequest` — to a new `claims` Postgres table, keyed by a server-generated UUID. GET /claims/{id} is a pure read of that table; it never re-runs the pipeline. A new `src/claims_assistant/claims_repository.py` owns the three outcome-shaped INSERT functions plus the one SELECT; a new `src/claims_assistant/api/claims_schema.py` owns the API-facing `ClaimResponse` envelope and the `Claim` ORM row → `ClaimResponse` mapping function; a new `src/claims_assistant/api/claims.py` owns the two routes and nothing else (HTTP concerns only — status codes, dependency wiring, translating a raised exception into a 502). `workflow/graph.py` gains one new function, `get_claim_intake_workflow()`, a thin wrapper around the already-existing `build_claim_intake_workflow(settings)` used as a FastAPI dependency — **not cached**. `agent_framework`'s installed `Workflow` class docstring states "Workflow instances contain states and states are preserved across calls to `run`. To execute multiple independent runs, create separate Workflow instances via WorkflowBuilder," and `Workflow.run()` enforces this at runtime (`if self._is_run_active(): raise WorkflowException("Workflow is already running; concurrent runs are not allowed on the same instance.")`, verified directly in `_workflows/_workflow.py`) — a cached singleton reused across two overlapping `POST /claims` requests (trivially likely given this endpoint's 10-30s synchronous duration) would make the second request's `workflow.run()` raise, which the broad `except Exception` in `submit_claim` (Task 3) would then silently mis-persist as a `failed` claim with a misleading error message unrelated to the actual submitted claim. Building fresh per request is cheap and correct instead: Phase 6 already established that constructing the graph (`Agent`/`OpenAIChatCompletionClient`/executor construction, `WorkflowBuilder.build()`) does no eager network I/O, so there's no real cost to rebuilding it per request, and this is literally what the SDK's own docstring recommends.
 
 **Why synchronous, not background-task+polling:** the roadmap's own success criteria reads "a real HTTP request... runs the full pipeline and returns the structured recommendation" — one request, one response. A background-task/job-queue pattern would add a `processing` status, a task runner, and a polling contract that nothing in the spec or roadmap asks for, for a demo-scale capstone where a 10-30s synchronous response over HTTP is unremarkable (no proxy/gateway timeout exists in this stack — `uvicorn` has no default request timeout). GET /claims/{id} still earns its place as a separate endpoint under this design: it's a pure persisted-read, letting an adjuster (or Postman) re-fetch a past result without re-running three LLM calls. Confirmed with the project owner before writing this plan.
 
 **Tech Stack:** `fastapi==0.141.1`, `sqlalchemy[asyncio]==2.0.52` (`asyncpg` driver), `pydantic==2.13.4` — all already-installed, unchanged since Phase 0. `agent-framework-core==1.14.0` (unchanged since Phase 6). No new dependency this phase — `httpx>=0.28.1` (already a dev dependency, used by `fastapi.testclient.TestClient` internally) is used directly for its `AsyncClient`/`ASGITransport`, for a reason verified empirically below, not previously needed in this project.
 
-**Spec:** [docs/superpowers/specs/2026-08-10-auto-claims-assistant-design.md](../specs/2026-08-10-auto-claims-assistant-design.md) (§3.1 orchestration graph — this phase is what finally calls it from an API route; §8 error handling — this is where MCP-lookup-failure `ValueError`s stop propagating uncaught; §9 testing — "FastAPI endpoint contracts" unit-tested, "manual/API-level demo testing... via Swagger/Postman")
+**Spec:** [docs/superpowers/specs/2026-08-10-auto-claims-assistant-design.md](../specs/2026-08-10-auto-claims-assistant-design.md) (§3.1 orchestration graph — this phase is what finally calls it from an API route; §8 error handling — this is where MCP-lookup-failure `ValueError`s stop propagating uncaught; §9 testing — "FastAPI endpoint contracts" tested — as `pytest.mark.integration` tests against real Postgres via a fake workflow double, per this phase's Global Constraints, not literal zero-external-service unit tests, since route logic here is inseparable from DB I/O — and "manual/API-level demo testing... via Swagger/Postman")
 
 ## Global Constraints
 
@@ -23,6 +23,7 @@
 - **A real event-loop hazard was found and reproduced while writing this plan, and shapes every test in Task 3/4**: this project's DB access is built on two independent module-level singletons — `db.py`'s raw `asyncpg.Pool` (used only by `/health/db`) and `database.py`'s SQLAlchemy `AsyncEngine`/`async_sessionmaker` (used by everything else, including this phase's new code). Both singletons are created lazily on first use and, once created, are bound to whichever `asyncio` event loop was running at that moment. `fastapi.testclient.TestClient` (used by the existing `test_health.py`/`test_health_db.py`) runs the ASGI app through its own internal `anyio` portal thread/loop, **not** the loop `pytest-asyncio` gives async fixtures (this project sets `asyncio_default_test_loop_scope = "session"`, one shared loop for all `pytest-asyncio` async tests/fixtures in a run). Reproduced directly against this project's real `database.py`: a `pytest_asyncio` fixture that calls `create_all_tables()` (touching the SQLAlchemy engine on the pytest-asyncio session loop), followed in the same test session by a **sync** `TestClient` call to a route that also touches that engine, fails with `sqlalchemy.exc.InterfaceError: cannot perform operation: another operation is in progress` (or, for the raw asyncpg pool case, `RuntimeError: ...Future... attached to a different loop`) — a real, reproducible cross-event-loop bug, not a hypothetical. The existing `test_health.py`/`test_health_db.py` happen to be safe only because neither one is ever combined, in the same pytest session, with a separate `pytest_asyncio` async fixture that touches the same singleton first — that's incidental, not a guarantee, and this phase's new tests deliberately do NOT repeat that combination. **Fix, verified working**: use `httpx.AsyncClient(transport=ASGITransport(app=app), base_url="http://test")` inside an `@pytest.mark.asyncio async def` test function instead of the sync `TestClient` — this keeps the fixture and every HTTP call on the exact same `pytest-asyncio` event loop, and was confirmed to pass cleanly (twice, across two separate test functions sharing the module-level cached engine) where the `TestClient` equivalent failed. Every new test in Task 3/4 that combines a DB-touching fixture/setup with an HTTP call to the app uses this pattern, not `TestClient`.
 - **`ruff`'s `B008` (`select = ["E", "F", "I", "UP", "B"]` in `pyproject.toml`) flags FastAPI's common `param: T = Depends(...)` default-argument pattern** — confirmed directly (a minimal probe route using that exact form fails `ruff check` with `B008 Do not perform function call Depends in argument defaults`). This is the first phase to use `Depends` at all (Phase 0's `health.py` doesn't). Fix, verified clean under both `ruff check` and `mypy --strict`: FastAPI's `Annotated[T, Depends(...)]` form (`from typing import Annotated`), used throughout `api/claims.py` instead of the bare-default form.
 - **`agent_framework.Workflow.run`/`WorkflowRunResult.get_outputs` signatures verified directly against installed source** (`_workflows/_workflow.py`) for this phase specifically because `api/claims.py` is the first non-test file in this project to call `workflow.run(...)` under `mypy --strict` (Phase 6 only ever called it from `tests/`, which aren't strict-checked): `run(message: Any | None = None, *, stream: bool = False, ...)` is `@overload`ed on `stream`; the default (`stream=False`, used here) resolves to `-> Awaitable[WorkflowRunResult]`, so `result = await workflow.run(intake)` types cleanly. `WorkflowRunResult.get_outputs(self) -> list[Any]` — indexing `[0]` and `isinstance()`-narrowing the result is unrestricted (`Any`) and passes `mypy --strict` as written in Task 3.
+- **`Workflow` instances are stateful and single-run-at-a-time by the SDK's own documented contract** — verified directly in `_workflows/_workflow.py`: the class docstring says "To execute multiple independent runs, create separate Workflow instances via WorkflowBuilder," and `run()` raises `WorkflowException("Workflow is already running; concurrent runs are not allowed on the same instance.")` if called while a prior run on the same instance hasn't finished (`_is_run_active()`, backed by a weakref cleared only when the run's stream is fully consumed or GC'd). This is why `get_claim_intake_workflow()` (Task 3) builds a fresh `Workflow` per call rather than caching one — see Architecture above.
 - **`sqlalchemy.ext.asyncio.AsyncSession.get(entity, ident) -> _O | None`** (generic on `entity`'s class) verified directly against installed source — `session.get(Claim, claim_id)` types as `Claim | None`, used in `claims_repository.get_claim_by_id`.
 - **`claims.policy_number`/`claims.vin` are deliberately not foreign keys** to `policies.policy_number`/`vehicles.vin`. Spec §8's "MCP tool call failure (e.g. policy not found)" case must still be persistable as a `failed` claim row with whatever `policy_number` the client submitted, even when that `policy_number` never resolves to a real `Policy` row (that's exactly what "policy not found" means) — an FK constraint would make that INSERT fail, defeating the point.
 - **MCP/lookup-failure and validation `ValueError`s, deliberately left uncaught through Phase 6 per that phase's own plan** (`coverage_agent.lookup_policy_by_number`'s "Phase 7 (FastAPI orchestrator endpoints) is where this becomes a caught, surfaced error instead of a propagating exception" comment; same class of `ValueError` from `coverage_agent._validate_citations`, `fraud_agent._call_mcp_tool`/`_validate_assessment`, and Phase 6's own `workflow.executors._incident_date`) — this phase catches all of them, generically, at the single `await workflow.run(...)` call site in `submit_claim` (Task 3), and turns any of them into a persisted `failed` claim row plus an explicit `502` response (spec §8's "surfaces this explicitly... rather than the LLM guessing"). A single broad `except Exception` (not a narrower `except ValueError`) is used deliberately: distinguishing "policy not found" from "citation fabrication caught by our own grounding check" from "MCP server unreachable" would need new custom exception types across three already-shipped agent modules, which is out of scope for this phase and not something the spec asks for — spec §8 treats "MCP tool call failure" as one coarse-grained category to surface explicitly, not a set of distinguishable HTTP error codes.
@@ -528,13 +529,14 @@ git commit -m "feat: add ClaimResponse API schema"
 **Files:**
 - Modify: `src/claims_assistant/database.py`
 - Modify: `src/claims_assistant/workflow/graph.py`
+- Modify: `tests/test_workflow_graph.py`
 - Create: `src/claims_assistant/api/claims.py`
 - Modify: `src/claims_assistant/main.py`
 - Test: `tests/test_claims_api.py`
 
 **Interfaces:**
 - Consumes: `get_session_factory` (`database.py`); `build_claim_intake_workflow` (`workflow/graph.py`, Phase 6); `get_settings` (`config.py`); `create_completed_claim`, `create_clarification_claim`, `create_failed_claim`, `get_claim_by_id` (`claims_repository.py`, Task 1); `ClaimResponse`, `claim_response_from_model` (`api/claims_schema.py`, Task 2); `ClaimIntakeRequest` (`workflow/messages.py`); `ClaimRecommendation` (`agents/adjuster_summary_schema.py`).
-- Produces: `get_db_session() -> AsyncIterator[AsyncSession]` (`database.py`) — a FastAPI dependency; `get_claim_intake_workflow() -> Workflow` (`workflow/graph.py`) — a cached FastAPI dependency; `router: APIRouter` (`api/claims.py`) with `POST /claims` and `GET /claims/{claim_id}`. Task 4 imports `get_claim_intake_workflow` (to leave un-overridden, exercising the real one) and reuses this task's `tests/test_claims_api.py` file, appending to it.
+- Produces: `get_db_session() -> AsyncIterator[AsyncSession]` (`database.py`) — a FastAPI dependency; `get_claim_intake_workflow() -> Workflow` (`workflow/graph.py`) — a FastAPI dependency that builds a **fresh** `Workflow` per call, deliberately not cached (see Architecture and Global Constraints — `Workflow` instances are single-run-at-a-time by the SDK's own contract); `router: APIRouter` (`api/claims.py`) with `POST /claims` and `GET /claims/{claim_id}`. Task 4 imports `get_claim_intake_workflow` (to leave un-overridden, exercising the real one) and reuses this task's `tests/test_claims_api.py` file, appending to it.
 
 - [ ] **Step 1: Write the failing route-contract tests**
 
@@ -718,29 +720,11 @@ async def get_db_session() -> AsyncIterator[AsyncSession]:
         yield session
 ```
 
-- [ ] **Step 4: Add the cached workflow singleton**
+- [ ] **Step 4: Add the workflow dependency factory**
 
-In `src/claims_assistant/workflow/graph.py`, change the top of the file from:
+**Deliberately not cached.** `agent_framework`'s `Workflow` is stateful and single-run-at-a-time by the SDK's own documented contract (Global Constraints) — reusing one cached instance across two overlapping `POST /claims` requests would make the second request's `workflow.run()` raise `WorkflowException`, which `submit_claim` (Step 5) would then mis-persist as a `failed` claim. Building fresh per call is cheap (Phase 6 already established graph construction does no eager network I/O) and matches the SDK's own recommendation.
 
-```python
-# src/claims_assistant/workflow/graph.py
-from __future__ import annotations
-
-from agent_framework import Case, Default, Workflow, WorkflowBuilder
-```
-
-to (inserting the stdlib `functools` import in its own group, ahead of the third-party `agent_framework` import — ruff's import sorter requires stdlib imports grouped before third-party ones, not spliced in next to the `claims_assistant.config` line):
-
-```python
-# src/claims_assistant/workflow/graph.py
-from __future__ import annotations
-
-from functools import lru_cache
-
-from agent_framework import Case, Default, Workflow, WorkflowBuilder
-```
-
-And change the config import line from:
+In `src/claims_assistant/workflow/graph.py`, change the config import line from:
 
 ```python
 from claims_assistant.config import Settings
@@ -755,10 +739,45 @@ from claims_assistant.config import Settings, get_settings
 And add this function at the end of the file:
 
 ```python
-@lru_cache
 def get_claim_intake_workflow() -> Workflow:
     return build_claim_intake_workflow(get_settings())
 ```
+
+Add a direct regression test for the "not cached" property to `tests/test_workflow_graph.py`. This deliberately does **not** go through `app.dependency_overrides` in `test_claims_api.py`'s HTTP-level tests — a dependency override replaces `get_claim_intake_workflow` entirely regardless of whether the real function caches, so an HTTP-level "two concurrent requests" test would pass whether or not this function is cached and give false confidence. Testing the function directly is what actually verifies it.
+
+Change the import line:
+
+```python
+from claims_assistant.workflow.graph import build_claim_intake_workflow
+```
+
+to:
+
+```python
+from claims_assistant.workflow.graph import build_claim_intake_workflow, get_claim_intake_workflow
+```
+
+And add this test after `test_build_claim_intake_workflow_builds_without_error`:
+
+```python
+@pytest.mark.integration
+def test_get_claim_intake_workflow_returns_a_fresh_instance_each_call():
+    # agent_framework's Workflow is stateful and single-run-at-a-time by the SDK's own
+    # contract (docstring: "To execute multiple independent runs, create separate
+    # Workflow instances via WorkflowBuilder"; run() raises WorkflowException if called
+    # while a prior run on the same instance is still active). get_claim_intake_workflow
+    # must never cache/reuse a single Workflow across calls, or two overlapping
+    # POST /claims requests (Phase 7) would race inside that guard.
+    workflow_a = get_claim_intake_workflow()
+    workflow_b = get_claim_intake_workflow()
+
+    assert workflow_a is not workflow_b
+```
+
+Marked `pytest.mark.integration` because `get_claim_intake_workflow()` calls the real `get_settings()` (reads `.env`), matching this file's own existing convention (`test_workflow_produces_claim_recommendation_for_normal_claim` below does the same for the same reason) — no network call actually happens, but the dependency on real `.env` values is what earns the marker here.
+
+Run: `uv run pytest tests/test_workflow_graph.py::test_get_claim_intake_workflow_returns_a_fresh_instance_each_call -v -m integration`
+Expected: PASS (1 passed)
 
 - [ ] **Step 5: Write the routes**
 
@@ -812,7 +831,15 @@ async def submit_claim(
             content=claim_response_from_model(claim).model_dump(mode="json"),
         )
 
-    outcome = result.get_outputs()[0]
+    outputs = result.get_outputs()
+    # Phase 6's graph always yields exactly one terminal output (either branch ends in a
+    # single ctx.yield_output call) -- this is a defensive check against a graph-wiring
+    # regression, not an expected runtime failure mode, so it stays outside the try/except
+    # above: an operational MCP/lookup failure gets persisted as a `failed` claim (spec
+    # §8), but a wiring bug that produced zero/multiple outputs is a genuine server defect
+    # and should surface as a loud, diagnosable error instead of a misleading claim record.
+    assert len(outputs) == 1, f"expected exactly one terminal workflow output, got {len(outputs)}"
+    outcome = outputs[0]
     if isinstance(outcome, ClaimRecommendation):
         claim = await create_completed_claim(session, intake, outcome)
     else:
@@ -1014,11 +1041,12 @@ git commit -m "test: add end-to-end POST/GET /claims HTTP tests"
 ## Definition of Done for Phase 7
 
 - [ ] `uv run pytest -v -m "not integration"` passes with no external services needed (`test_claims_schema.py` plus all prior phases' unit tests, unchanged).
-- [ ] With real `AZURE_OPENAI_*`, `AZURE_SEARCH_*` values in `.env` and `docker-compose up -d postgres` running (seeded), `uv run pytest -v -m integration` passes — including this phase's `test_claims_repository.py` and `test_claims_api.py` (6 tests), plus all prior phases' integration tests (no regressions).
+- [ ] With real `AZURE_OPENAI_*`, `AZURE_SEARCH_*` values in `.env` and `docker-compose up -d postgres` running (seeded), `uv run pytest -v -m integration` passes — including this phase's `test_claims_repository.py` (4 tests), `test_claims_api.py` (6 tests), and the new `test_workflow_graph.py` addition (1 test), plus all prior phases' integration tests (no regressions).
 - [ ] A real HTTP `POST /claims` request (verified via Swagger, Task 4 Step 4) runs the full pipeline and returns a structured `ClaimRecommendation` (roadmap Phase 7 success criteria).
 - [ ] `GET /claims/{id}` reads a previously-persisted claim back without re-running the pipeline.
 - [ ] A deliberately low-confidence narrative posted to `POST /claims` returns `status: "needs_clarification"` with the `ClarificationRequest` payload, demonstrating the graph's conditional-handoff path is reachable over HTTP too.
-- [ ] An MCP-lookup-failure (or any other) exception raised inside `workflow.run()` is caught once, at the API layer, persisted as a `failed` claim, and surfaced as an explicit `502` — no uncaught exception reaches the client as an opaque `500` (spec §8).
+- [ ] An MCP-lookup-failure (or any other operational exception `workflow.run()` raises) is caught once, at the API layer, persisted as a `failed` claim, and surfaced as an explicit `502` — no operational failure reaches the client as an opaque, unpersisted `500` (spec §8). (A malformed graph producing zero/multiple terminal outputs is a distinct, structurally-unreachable-today failure mode that intentionally surfaces as a diagnosable `AssertionError`/500 instead of a misleading persisted claim — see Task 3 Step 5's inline rationale.)
+- [ ] `get_claim_intake_workflow()` returns a fresh `Workflow` instance on every call (`test_get_claim_intake_workflow_returns_a_fresh_instance_each_call`, Task 3, added to `test_workflow_graph.py`) — regression coverage for the SDK's single-run-per-instance contract, verified to actually fail if `@lru_cache` is reintroduced (confirmed by deliberately reintroducing it during this plan's own verification pass and watching the test catch it) — an equivalent test driven through `app.dependency_overrides` at the HTTP layer was considered and rejected because overriding the dependency bypasses any caching on the real function entirely, which would pass regardless of whether the underlying bug exists.
 - [ ] `uv run ruff check .` and `uv run mypy src` both pass clean.
 - [ ] Roadmap doc's Phase 7 checkbox is checked off.
 - [ ] Everything above is committed.
