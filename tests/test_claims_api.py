@@ -151,3 +151,67 @@ async def test_get_claims_returns_404_for_unknown_id():
         response = await client.get(f"/claims/{uuid.uuid4()}")
 
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_post_claims_full_pipeline_returns_recommendation_via_real_http_request(
+    seeded_db,
+):
+    app = create_app()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/claims",
+            json={
+                "policy_number": "POL-CA-0003",
+                "vin": "1C4RJFBG5FC123458",
+                "narrative_text": (
+                    "On March 10, 2026, I (Priya Natarajan) discovered hail damage to my "
+                    "Jeep Grand Cherokee, which had been parked outside my home overnight "
+                    "during a storm in Fresno, CA. No one was hurt; I was not in the "
+                    "vehicle at the time."
+                ),
+            },
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["status"] == "completed"
+        assert body["recommendation"]["coverage_determination"] in (
+            "approve",
+            "deny",
+            "needs_info",
+        )
+        assert body["recommendation"]["fraud_risk_tier"] in ("low", "medium", "high")
+        assert body["recommendation"]["narrative_summary"]
+        assert body["recommendation"]["recommended_next_step"]
+
+        get_response = await client.get(f"/claims/{body['id']}")
+
+    assert get_response.status_code == 200
+    assert get_response.json()["status"] == "completed"
+    assert get_response.json()["recommendation"] == body["recommendation"]
+
+
+@pytest.mark.asyncio
+async def test_post_claims_routes_low_confidence_extraction_to_clarification_via_real_http(
+    seeded_db,
+):
+    app = create_app()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/claims",
+            json={
+                "policy_number": "POL-CA-0003",
+                "vin": "1C4RJFBG5FC123458",
+                "narrative_text": (
+                    "Something happened to my car at some point, not totally sure when or "
+                    "where, might have been another vehicle involved, might not have been. "
+                    "Not sure if anyone got hurt."
+                ),
+            },
+        )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["status"] == "needs_clarification"
+    assert body["recommendation"] is None
+    assert body["clarification"]["reason"]
