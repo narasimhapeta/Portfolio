@@ -49,7 +49,7 @@ The new Adjuster-Summary Agent's LLM call is prose-only: it returns `narrative_s
 - Consumes: nothing new (first task of the phase).
 - Produces: `Settings.azure_openai_adjuster_summary_deployment: str` — consumed by Task 4's `build_adjuster_summary_chat_client()`.
 
-- [ ] **Step 1: Provision the Adjuster-Summary Agent's chat deployment**
+- [x] **Step 1: Provision the Adjuster-Summary Agent's chat deployment**
 
 Reuses the existing `claims-assistant-openai` resource. `gpt-5.4-mini` (version `2026-03-17`) is the current unambiguous mini-tier model per the live catalog check above — the same model already deployed for `extraction-agent`.
 
@@ -59,7 +59,7 @@ az cognitiveservices account deployment create --name claims-assistant-openai --
 
 If this fails with a capacity/quota error, retry with a lower `--sku-capacity` (e.g. `5`) — this is a demo workload, not production traffic.
 
-- [ ] **Step 2: Extend the config test**
+- [x] **Step 2: Extend the config test**
 
 Replace `test_settings_reads_from_env` in `tests/test_config.py` with:
 
@@ -119,12 +119,12 @@ def test_get_settings_is_cached():
     assert get_settings() is get_settings()
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `uv run pytest tests/test_config.py -v`
 Expected: FAIL — `AttributeError: 'Settings' object has no attribute 'azure_openai_adjuster_summary_deployment'`
 
-- [ ] **Step 4: Add the new settings field**
+- [x] **Step 4: Add the new settings field**
 
 In `src/claims_assistant/config.py`, add this field to the `Settings` class (after the existing `azure_openai_fraud_deployment` field):
 
@@ -132,12 +132,12 @@ In `src/claims_assistant/config.py`, add this field to the `Settings` class (aft
     azure_openai_adjuster_summary_deployment: str = ""
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `uv run pytest tests/test_config.py -v`
 Expected: PASS (2 passed)
 
-- [ ] **Step 6: Document the new env var**
+- [x] **Step 6: Document the new env var**
 
 Add to `.env.example` (and your own `.env`, with your real deployment name from Step 1):
 
@@ -145,12 +145,12 @@ Add to `.env.example` (and your own `.env`, with your real deployment name from 
 AZURE_OPENAI_ADJUSTER_SUMMARY_DEPLOYMENT=adjuster-summary-agent
 ```
 
-- [ ] **Step 7: Lint and type-check**
+- [x] **Step 7: Lint and type-check**
 
 Run: `uv run ruff check .` and `uv run mypy src`
 Expected: both clean.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```powershell
 git add src/claims_assistant/config.py .env.example tests/test_config.py
@@ -170,7 +170,7 @@ git commit -m "feat: add Adjuster-Summary Agent chat deployment config"
 - Consumes: `FieldConfidence`, `FNOLExtraction` (`agents/extraction_schema.py`); `FNOLFacts` (`fnol_schema.py`) — all already defined, used here only as plain Pydantic models, no LLM/network call in this task.
 - Produces: `CONFIDENCE_THRESHOLD: float`, `identify_low_confidence_fields(confidence: FieldConfidence, threshold: float = CONFIDENCE_THRESHOLD) -> list[str]`, `identify_missing_required_fields(facts: FNOLFacts) -> list[str]`, `is_extraction_sufficient(extraction: FNOLExtraction, threshold: float = CONFIDENCE_THRESHOLD) -> bool`. Task 3's `ClarificationRequest` construction and Task 5's `ClarificationExecutor`/graph wiring both import from here.
 
-- [ ] **Step 1: Write the failing supervisor tests**
+- [x] **Step 1: Write the failing supervisor tests**
 
 Pure, no network — same style as Phase 5's `fraud_signals.py` tests.
 
@@ -253,12 +253,12 @@ def test_is_extraction_sufficient_false_for_missing_required_fields():
     assert is_extraction_sufficient(extraction) is False
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `uv run pytest tests/test_supervisor.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'claims_assistant.workflow'`
 
-- [ ] **Step 3: Create the `workflow` package and write the supervisor module**
+- [x] **Step 3: Create the `workflow` package and write the supervisor module**
 
 ```python
 # src/claims_assistant/workflow/__init__.py
@@ -312,17 +312,17 @@ def is_extraction_sufficient(
     )
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `uv run pytest tests/test_supervisor.py -v`
 Expected: PASS (8 passed)
 
-- [ ] **Step 5: Lint and type-check**
+- [x] **Step 5: Lint and type-check**
 
 Run: `uv run ruff check .` and `uv run mypy src`
 Expected: both clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/claims_assistant/workflow/__init__.py src/claims_assistant/workflow/supervisor.py tests/test_supervisor.py
@@ -341,7 +341,7 @@ git commit -m "feat: add deterministic supervisor confidence-routing logic"
 - Consumes: `FNOLExtraction` (`agents/extraction_schema.py`); `CoverageDetermination` (`agents/coverage_schema.py`); `FraudRiskAssessment` (`agents/fraud_schema.py`) — all already defined.
 - Produces: `ClaimIntakeRequest` (`policy_number: str`, `vin: str`, `narrative_text: str`), `ExtractionResult` (`request: ClaimIntakeRequest`, `extraction: FNOLExtraction`), `CoverageOutcome` (`policy_number: str`, `determination: CoverageDetermination`), `FraudOutcome` (`policy_number: str`, `assessment: FraudRiskAssessment`), `ClarificationRequest` (`policy_number: str`, `reason: str`, `low_confidence_fields: list[str]`, `missing_required_fields: list[str]`, `extraction: FNOLExtraction`). Task 5's `executors.py` and `graph.py` both import all five; Task 6's end-to-end tests construct `ClaimIntakeRequest` and assert on `ClarificationRequest`/`ClaimRecommendation` (Task 4).
 
-- [ ] **Step 1: Write the failing message-type tests**
+- [x] **Step 1: Write the failing message-type tests**
 
 ```python
 # tests/test_workflow_messages.py
@@ -423,12 +423,12 @@ def test_clarification_request_carries_reason_and_extraction():
     assert request.extraction.facts.location == "Elm Street, Columbus, OH"
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `uv run pytest tests/test_workflow_messages.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'claims_assistant.workflow.messages'`
 
-- [ ] **Step 3: Write the message types**
+- [x] **Step 3: Write the message types**
 
 ```python
 # src/claims_assistant/workflow/messages.py
@@ -470,17 +470,17 @@ class ClarificationRequest(BaseModel):
     extraction: FNOLExtraction
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `uv run pytest tests/test_workflow_messages.py -v`
 Expected: PASS (5 passed)
 
-- [ ] **Step 5: Lint and type-check**
+- [x] **Step 5: Lint and type-check**
 
 Run: `uv run ruff check .` and `uv run mypy src`
 Expected: both clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/claims_assistant/workflow/messages.py tests/test_workflow_messages.py
@@ -501,7 +501,7 @@ git commit -m "feat: add workflow graph message types"
 - Consumes: `Agent`, `ChatOptions` (`agent_framework`); `OpenAIChatCompletionClient` (`agent_framework.openai`); `Settings` (`config.py`); `CoverageDetermination` (`agents/coverage_schema.py`); `FraudRiskAssessment`, `RedFlagCode` (`agents/fraud_schema.py`, `agents/fraud_signals.py`).
 - Produces: `AdjusterSummary` (LLM output: `narrative_summary: str`, `recommended_next_step: str`), `ClaimRecommendation` (terminal assembled object: `policy_number`, `coverage_determination`, `coverage_rationale`, `coverage_citations`, `fraud_risk_score`, `fraud_risk_tier`, `fraud_red_flags`, `fraud_rationale`, `narrative_summary`, `recommended_next_step`), `build_adjuster_summary_chat_client(settings) -> OpenAIChatCompletionClient`, `build_adjuster_summary_agent(settings) -> Agent`, `async def summarize_for_adjuster(agent, policy_number, coverage, fraud) -> AdjusterSummary`, `assemble_claim_recommendation(policy_number, coverage, fraud, summary) -> ClaimRecommendation`. Task 5's `AdjusterSummaryExecutor` imports `build_adjuster_summary_agent`, `summarize_for_adjuster`, and `assemble_claim_recommendation`.
 
-- [ ] **Step 1: Write the failing schema tests**
+- [x] **Step 1: Write the failing schema tests**
 
 ```python
 # tests/test_adjuster_summary_schema.py
@@ -545,12 +545,12 @@ def test_assemble_claim_recommendation_passes_through_coverage_and_fraud_facts()
     assert recommendation.recommended_next_step == "Approve and close."
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `uv run pytest tests/test_adjuster_summary_schema.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'claims_assistant.agents.adjuster_summary_schema'`
 
-- [ ] **Step 3: Write the schema module**
+- [x] **Step 3: Write the schema module**
 
 ```python
 # src/claims_assistant/agents/adjuster_summary_schema.py
@@ -607,12 +607,12 @@ def assemble_claim_recommendation(
     )
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `uv run pytest tests/test_adjuster_summary_schema.py -v`
 Expected: PASS (2 passed)
 
-- [ ] **Step 5: Write the failing agent integration test**
+- [x] **Step 5: Write the failing agent integration test**
 
 Needs real Azure OpenAI credentials for `AZURE_OPENAI_ADJUSTER_SUMMARY_DEPLOYMENT`. No MCP/Postgres/Search needed — this agent only reasons over already-computed `CoverageDetermination`/`FraudRiskAssessment` objects built by hand.
 
@@ -653,12 +653,12 @@ async def test_summarize_for_adjuster_produces_nonempty_narrative_and_next_step(
     assert summary.recommended_next_step
 ```
 
-- [ ] **Step 6: Run the test to verify it fails**
+- [x] **Step 6: Run the test to verify it fails**
 
 Run: `uv run pytest tests/test_adjuster_summary_agent.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'claims_assistant.agents.adjuster_summary_agent'`
 
-- [ ] **Step 7: Write the Adjuster-Summary Agent**
+- [x] **Step 7: Write the Adjuster-Summary Agent**
 
 ```python
 # src/claims_assistant/agents/adjuster_summary_agent.py
@@ -743,17 +743,17 @@ async def summarize_for_adjuster(
     return summary
 ```
 
-- [ ] **Step 8: Run the test**
+- [x] **Step 8: Run the test**
 
 Run: `uv run pytest tests/test_adjuster_summary_agent.py -v`
 Expected: PASS (1 passed). If `narrative_summary`/`recommended_next_step` come back present but low-quality (e.g. the model restates raw field names instead of writing prose), that's a prompt-tuning signal for `INSTRUCTIONS`, not a test bug — strengthen the "written for someone who has not seen the underlying data" framing and re-run, same category of iteration Phase 4/5 both needed.
 
-- [ ] **Step 9: Lint and type-check**
+- [x] **Step 9: Lint and type-check**
 
 Run: `uv run ruff check .` and `uv run mypy src`
 Expected: both clean.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```powershell
 git add src/claims_assistant/agents/adjuster_summary_schema.py src/claims_assistant/agents/adjuster_summary_agent.py tests/test_adjuster_summary_schema.py tests/test_adjuster_summary_agent.py
@@ -774,7 +774,7 @@ git commit -m "feat: add Adjuster-Summary Agent"
 - Consumes: `Agent` (`agent_framework`); `extract_fnol_facts`, `build_extraction_agent` (`agents/extraction_agent.py`); `determine_coverage`, `build_coverage_agent` (`agents/coverage_agent.py`); `assess_fraud_risk`, `build_fraud_agent` (`agents/fraud_agent.py`); `summarize_for_adjuster`, `assemble_claim_recommendation`, `build_adjuster_summary_agent` (Task 4); `ClaimRecommendation` (Task 4); `is_extraction_sufficient`, `identify_low_confidence_fields`, `identify_missing_required_fields` (Task 2); `ClaimIntakeRequest`, `ExtractionResult`, `CoverageOutcome`, `FraudOutcome`, `ClarificationRequest` (Task 3); `Settings` (`config.py`).
 - Produces: `ExtractionExecutor`, `ClarificationExecutor`, `FanOutGateExecutor`, `CoverageExecutor`, `FraudRiskExecutor`, `AdjusterSummaryExecutor` (all `Executor` subclasses); `_incident_date(incident_datetime: str) -> str` (module-private helper, not consumed outside this file); `build_claim_intake_workflow(settings: Settings) -> Workflow`. Task 6's end-to-end tests import `build_claim_intake_workflow` and `ClaimIntakeRequest` (Task 3) and run the built `Workflow`.
 
-- [ ] **Step 1: Write the failing structural test**
+- [x] **Step 1: Write the failing structural test**
 
 This builds the graph with fake-but-nonempty `Settings` (no real Azure/network call happens at build time — `OpenAIChatCompletionClient` construction and `WorkflowBuilder.build()`'s validation are both local) and only checks the graph assembles without a wiring error (duplicate IDs, type mismatch between adjacent nodes, missing start executor, etc.) — the real behavioral correctness is Task 6's job.
 
@@ -801,12 +801,12 @@ def test_build_claim_intake_workflow_builds_without_error():
     assert isinstance(workflow, Workflow)
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `uv run pytest tests/test_workflow_graph.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'claims_assistant.workflow.graph'`
 
-- [ ] **Step 3: Write the failing incident-date helper test**
+- [x] **Step 3: Write the failing incident-date helper test**
 
 `FNOLFacts.incident_datetime` (`fnol_schema.py`) is a bare `str` with no format constraint — `"YYYY-MM-DDTHH:MM"` is only a convention from the few-shot examples, not schema-enforced. Phase 5's own tests always hand-built `incident_date` as a clean ISO string; Phase 6 is the first place it comes from a real LLM extraction, which could in principle produce something that doesn't start with a parseable date (especially for a deliberately date-vague narrative like Task 6's clarification-routing test case, if the model ever assigns that field surprisingly high confidence anyway). Rather than let that surface as a confusing `ValueError` deep inside `fraud_signals.compute_fraud_signals`'s own `date.fromisoformat` call, a small helper in `executors.py` raises a clear, immediately-diagnosable error right where extraction output meets fraud-agent input.
 
@@ -830,12 +830,12 @@ def test_incident_date_raises_clear_error_for_unparseable_input():
         _incident_date("sometime last week, not sure exactly when")
 ```
 
-- [ ] **Step 4: Run the test to verify it fails**
+- [x] **Step 4: Run the test to verify it fails**
 
 Run: `uv run pytest tests/test_workflow_executors.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'claims_assistant.workflow.executors'`
 
-- [ ] **Step 5: Write the executors**
+- [x] **Step 5: Write the executors**
 
 ```python
 # src/claims_assistant/workflow/executors.py
@@ -1004,12 +1004,12 @@ class AdjusterSummaryExecutor(Executor):
         )
 ```
 
-- [ ] **Step 6: Run the incident-date helper tests to verify they pass**
+- [x] **Step 6: Run the incident-date helper tests to verify they pass**
 
 Run: `uv run pytest tests/test_workflow_executors.py -v`
 Expected: PASS (3 passed)
 
-- [ ] **Step 7: Write the graph builder**
+- [x] **Step 7: Write the graph builder**
 
 `Case.condition` receives the raw message the source executor sent — for the `extraction` node that's `ExtractionResult` (not the `FNOLExtraction` nested inside it), so the condition reaches through `result.extraction` before calling `is_extraction_sufficient`, which takes an `FNOLExtraction`.
 
@@ -1068,17 +1068,17 @@ def build_claim_intake_workflow(settings: Settings) -> Workflow:
     )
 ```
 
-- [ ] **Step 8: Run the structural test**
+- [x] **Step 8: Run the structural test**
 
 Run: `uv run pytest tests/test_workflow_graph.py -v`
 Expected: PASS (1 passed). `WorkflowBuilder.build()`'s type-compatibility validation was traced end-to-end against the real installed source while writing this plan for exactly this graph's `list[CoverageOutcome | FraudOutcome]` fan-in case, and it resolves correctly under the bare `@handler` introspection used above — this should just pass. If it doesn't (a type-compatibility error meaning two adjacent nodes' declared input/output types don't line up), re-check each `@handler`'s `message`/`WorkflowContext[...]` annotations against the Interfaces list above field-by-field; the documented fallback is explicit typing on `AdjusterSummaryExecutor.run` — `@handler(input=list[CoverageOutcome | FraudOutcome], workflow_output=ClaimRecommendation)` in place of the bare `@handler` — both modes are real (see Global Constraints).
 
-- [ ] **Step 9: Lint and type-check**
+- [x] **Step 9: Lint and type-check**
 
 Run: `uv run ruff check .` and `uv run mypy src`
 Expected: both clean.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```powershell
 git add src/claims_assistant/workflow/executors.py src/claims_assistant/workflow/graph.py tests/test_workflow_executors.py tests/test_workflow_graph.py
@@ -1097,7 +1097,7 @@ git commit -m "feat: add claim-intake workflow graph (executors + builder)"
 - Consumes: `build_claim_intake_workflow` (Task 5); `ClaimIntakeRequest` (Task 3); `ClaimRecommendation` (Task 4); `ClarificationRequest` (Task 3); `Workflow.run()` / `WorkflowRunResult.get_outputs()` (`agent_framework`).
 - Produces: nothing new — this is the roadmap's own success-criteria check, not a new interface for a later phase. Phase 7 (FastAPI orchestrator endpoints) is what actually calls `build_claim_intake_workflow` from an API route.
 
-- [ ] **Step 1: Write the failing end-to-end tests**
+- [x] **Step 1: Write the failing end-to-end tests**
 
 Two cases, per the roadmap's success criteria — a normal claim that produces a merged `ClaimRecommendation`, and a deliberately ambiguous narrative that should route to `ClarificationRequest` instead. Uses real seeded data (`POL-CA-0003` / Priya Natarajan's Jeep, the same clean fixture Phase 5 used) plus real Azure OpenAI and Azure AI Search credentials — the full graph spans Extraction, Coverage (needs Search), and Fraud-Risk (needs Postgres via MCP).
 
@@ -1178,7 +1178,7 @@ async def test_workflow_routes_low_confidence_extraction_to_clarification(seeded
     assert outputs[0].reason
 ```
 
-- [ ] **Step 2: Run the tests**
+- [x] **Step 2: Run the tests**
 
 Run: `uv run pytest tests/test_workflow_graph.py -v -m integration`
 Expected: PASS (2 passed, plus the existing structural test still passing under `-m "not integration"`).
@@ -1187,12 +1187,12 @@ If the first test fails on `coverage_determination`/`fraud_risk_tier` being an u
 
 If the second test fails because the real Extraction Agent assigned high confidence to the deliberately vague narrative (so the workflow produced a `ClaimRecommendation` instead of routing to clarification): this is real prompt-tuning signal, not a test bug — per this project's established pattern (Phase 4/5 both needed at least one iteration here), strengthen `extraction_agent.py`'s `INSTRUCTIONS_TEMPLATE` to more explicitly call out that vague/uncertain narratives (no clear date, ambiguous number of parties, hedged injury language) should produce confidence scores below roughly 0.5–0.6 on the affected fields, and/or make the test narrative even more explicitly ambiguous (e.g. remove any parseable date entirely) before concluding the routing logic itself (Task 2, already unit-tested and deterministic) is at fault.
 
-- [ ] **Step 3: Lint and type-check**
+- [x] **Step 3: Lint and type-check**
 
 Run: `uv run ruff check .` and `uv run mypy src`
 Expected: both clean.
 
-- [ ] **Step 4: Update the roadmap**
+- [x] **Step 4: Update the roadmap**
 
 In `docs/superpowers/plans/2026-08-10-roadmap.md`, check off Phase 6:
 
@@ -1200,7 +1200,7 @@ In `docs/superpowers/plans/2026-08-10-roadmap.md`, check off Phase 6:
 - [x] Phase 6 — Supervisor orchestration graph
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add tests/test_workflow_graph.py docs/superpowers/plans/2026-08-10-roadmap.md
@@ -1211,13 +1211,22 @@ git commit -m "test: add end-to-end claim-intake workflow graph tests"
 
 ## Definition of Done for Phase 6
 
-- [ ] `uv run pytest -v -m "not integration"` passes with no external services needed (config, supervisor, workflow messages, adjuster-summary schema, workflow-graph structural-build tests, plus all prior phases' unit tests unchanged).
-- [ ] With real `AZURE_OPENAI_*`, `AZURE_SEARCH_*` values in `.env` (including `AZURE_OPENAI_ADJUSTER_SUMMARY_DEPLOYMENT`) and `docker-compose up -d postgres` running (seeded), `uv run pytest -v -m integration` passes — including this phase's Adjuster-Summary Agent test and both end-to-end workflow-graph tests, plus all prior phases' integration tests (no regressions).
-- [ ] A normal FNOL narrative run through `build_claim_intake_workflow(...).run(...)` produces a single `ClaimRecommendation` output merging Coverage + Fraud-Risk (roadmap Phase 6 success criteria, Task 6).
-- [ ] A deliberately low-confidence/ambiguous FNOL narrative routes to `ClarificationRequest` instead (roadmap Phase 6 success criteria, Task 6) — demonstrating the graph's conditional-handoff mode, not just the sequential/parallel path.
-- [ ] `is_extraction_sufficient`'s routing decision itself is covered by fast, deterministic unit tests independent of LLM sampling (Task 2) — the end-to-end clarification-routing test (Task 6) additionally verifies the real Extraction Agent's confidence calibration on an ambiguous input, a separate concern from the routing logic's own correctness.
-- [ ] `uv run ruff check .` and `uv run mypy src` both pass clean.
-- [ ] Roadmap doc's Phase 6 checkbox is checked off.
-- [ ] Everything above is committed.
+- [x] `uv run pytest -v -m "not integration"` passes with no external services needed (config, supervisor, workflow messages, adjuster-summary schema, workflow-graph structural-build tests, plus all prior phases' unit tests unchanged). 74 passed.
+- [x] With real `AZURE_OPENAI_*`, `AZURE_SEARCH_*` values in `.env` (including `AZURE_OPENAI_ADJUSTER_SUMMARY_DEPLOYMENT`) and `docker-compose up -d postgres` running (seeded), `uv run pytest -v -m integration` passes — including this phase's Adjuster-Summary Agent test and both end-to-end workflow-graph tests, plus all prior phases' integration tests (no regressions). 35 passed.
+- [x] A normal FNOL narrative run through `build_claim_intake_workflow(...).run(...)` produces a single `ClaimRecommendation` output merging Coverage + Fraud-Risk (roadmap Phase 6 success criteria, Task 6).
+- [x] A deliberately low-confidence/ambiguous FNOL narrative routes to `ClarificationRequest` instead (roadmap Phase 6 success criteria, Task 6) — demonstrating the graph's conditional-handoff mode, not just the sequential/parallel path.
+- [x] `is_extraction_sufficient`'s routing decision itself is covered by fast, deterministic unit tests independent of LLM sampling (Task 2) — the end-to-end clarification-routing test (Task 6) additionally verifies the real Extraction Agent's confidence calibration on an ambiguous input, a separate concern from the routing logic's own correctness.
+- [x] `uv run ruff check .` and `uv run mypy src` both pass clean.
+- [x] Roadmap doc's Phase 6 checkbox is checked off.
+- [x] Everything above is committed.
 
 Once this is done, we write the Phase 7 (FastAPI orchestrator endpoints) plan next — it depends on Phase 6 existing (per the roadmap's dependency notes) and wires `build_claim_intake_workflow()` behind `POST /claims` / `GET /claims/{id}`.
+
+**Notes from execution:** Two real issues surfaced during the guided walkthrough, neither caught by the pre-execution plan review (which itself was unusually thorough — an independent reviewer re-verified every `agent_framework` API claim against installed source and found no Critical issues):
+
+1. **A line-length lint failure in `tests/test_config.py`** (Task 1, Step 7): the plan's snippet put `monkeypatch.setenv("AZURE_OPENAI_ADJUSTER_SUMMARY_DEPLOYMENT", "test-adjuster-summary-deployment")` on one line — 102 characters against ruff's 100-character limit (`pyproject.toml`'s `line-length = 100`). Minor and mechanical (wrapped the call across three lines, matching the style already used elsewhere in that file for the `postgres_dsn` assertions), but a real gap: nothing in the pre-execution review checked line lengths against the project's actual lint config.
+2. **Task 6's "normal claim" end-to-end test failed on its first real run — correctly, because of a flawed test fixture, not a code bug.** The test's narrative never named the policyholder (all "my"/"I", no name given), unlike every other narrative fixture in this codebase (the Phase 3 few-shot examples and `test_extraction_agent.py` always write "I (Full Name) was driving..."). The real Extraction Agent correctly assigned low confidence (0.4) to the `parties` field given that genuine absence of information, and the graph correctly routed to `ClarificationRequest` instead of `ClaimRecommendation` — the routing logic (Task 2, already unit-tested) and the graph wiring (Task 5) both worked exactly as designed; the test's own narrative just accidentally exercised the *other* success criterion. Root-caused by reading the actual `FNOLExtraction` object in the assertion failure's repr rather than guessing — it was self-evident once printed (`parties=[Party(role='policyholder', name='I', ...)]`, `parties=0.4` confidence). Fixed by adding the seeded policyholder's real name (`Priya Natarajan`, from `POL-CA-0003`) to the narrative, matching the established "I (Full Name)..." convention. **Lesson for future phases:** any new end-to-end test narrative written for this project needs to follow the same naming convention as the existing few-shot examples and extraction tests — an unnamed-policyholder narrative isn't an edge case here, it's a guaranteed low-confidence trigger given how `extraction_agent.py`'s own `INSTRUCTIONS_TEMPLATE` scores confidence.
+
+No changes were needed to `is_extraction_sufficient`, the switch-case wiring, the fan-out/fan-in edges, or any `agent_framework` API usage — every specific claim the pre-execution review verified against the installed library held up in real execution, which is the strongest validation yet (across Phases 3–6) that reading installed source directly, rather than trusting trained knowledge, is worth the up-front cost on unfamiliar SDK surface.
+
+Full suite after Task 6: 74 passed (`-m "not integration"`), 35 passed (`-m integration`, needs `docker-compose up -d postgres` + real `AZURE_OPENAI_*`/`AZURE_SEARCH_*` in `.env`) — no regressions across Phases 0–6.
