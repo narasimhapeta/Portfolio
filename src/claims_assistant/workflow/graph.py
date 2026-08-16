@@ -7,7 +7,7 @@ from claims_assistant.agents.adjuster_summary_agent import build_adjuster_summar
 from claims_assistant.agents.coverage_agent import build_coverage_agent
 from claims_assistant.agents.extraction_agent import build_extraction_agent
 from claims_assistant.agents.fraud_agent import build_fraud_agent
-from claims_assistant.config import Settings
+from claims_assistant.config import Settings, get_settings
 from claims_assistant.workflow.executors import (
     AdjusterSummaryExecutor,
     ClarificationExecutor,
@@ -50,3 +50,6 @@ def build_claim_intake_workflow(settings: Settings) -> Workflow:
         .add_fan_in_edges([coverage, fraud_risk], adjuster_summary)
         .build()
     )
+
+def get_claim_intake_workflow() -> Workflow:
+    return build_claim_intake_workflow(get_settings())

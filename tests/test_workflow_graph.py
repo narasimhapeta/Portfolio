@@ -4,7 +4,7 @@ from agent_framework import Workflow
 
 from claims_assistant.agents.adjuster_summary_schema import ClaimRecommendation
 from claims_assistant.config import Settings, get_settings
-from claims_assistant.workflow.graph import build_claim_intake_workflow
+from claims_assistant.workflow.graph import build_claim_intake_workflow, get_claim_intake_workflow
 from claims_assistant.workflow.messages import ClaimIntakeRequest, ClarificationRequest
 
 _TEST_SETTINGS = Settings(
@@ -70,3 +70,16 @@ async def test_workflow_routes_low_confidence_extraction_to_clarification(seeded
     assert isinstance(outputs[0], ClarificationRequest)
     assert outputs[0].policy_number == "POL-CA-0003"
     assert outputs[0].reason
+
+@pytest.mark.integration
+def test_get_claim_intake_workflow_returns_a_fresh_instance_each_call():
+    # agent_framework's Workflow is stateful and single-run-at-a-time by the SDK's own
+    # contract (docstring: "To execute multiple independent runs, create separate
+    # Workflow instances via WorkflowBuilder"; run() raises WorkflowException if called
+    # while a prior run on the same instance is still active). get_claim_intake_workflow
+    # must never cache/reuse a single Workflow across calls, or two overlapping
+    # POST /claims requests (Phase 7) would race inside that guard.
+    workflow_a = get_claim_intake_workflow()
+    workflow_b = get_claim_intake_workflow()
+
+    assert workflow_a is not workflow_b
