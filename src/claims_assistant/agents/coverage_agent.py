@@ -28,8 +28,6 @@ knowledge of insurance law or assume coverage that isn't stated in the clauses.
 invent a chunk_id or cite a clause that was not provided.
 - If the retrieved clauses clearly show the loss is covered, respond "approve" and cite the \
 specific clause(s) that establish coverage.
-- If the retrieved clauses clearly show the loss is excluded, or the policy tier doesn't include \
-this type of coverage at all, respond "deny" and cite the specific clause(s) establishing that.
 - If the retrieved clauses clearly show the loss is excluded with no conditions attached, or the \
 policy tier doesn't include this type of coverage at all, respond "deny" and cite the specific \
 clause(s) establishing that.
