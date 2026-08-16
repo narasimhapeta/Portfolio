@@ -28,3 +28,19 @@ def test_ambiguous_injury_fixture_marks_injuries_true():
 
     assert fixture.gold.injuries is True
     assert fixture.gold.injury_description is not None
+
+def test_load_coverage_fixtures_returns_all_fixtures():
+    from claims_assistant.eval_fixtures import load_coverage_fixtures
+
+    fixtures = load_coverage_fixtures()
+
+    assert len(fixtures) == 5
+    ids = {f.fixture_id for f in fixtures}
+    assert len(ids) == 5
+    determinations = {f.gold_determination for f in fixtures}
+    assert determinations == {"approve", "deny", "needs_info"}
+    for fixture in fixtures:
+        assert fixture.policy_number
+        assert fixture.claim_narrative
+        assert fixture.gold_citation
+
