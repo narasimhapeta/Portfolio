@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import datetime
+import uuid
+from typing import Any
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -58,3 +61,26 @@ class ClaimHistory(Base):
     fraud_flag: Mapped[bool] = mapped_column(default=False)
 
     policy: Mapped[Policy] = relationship(back_populates="claims")
+
+
+
+class Claim(Base):
+    """A persisted claim-intake pipeline run. status is one of: completed,
+    needs_clarification, failed. policy_number/vin are deliberately not foreign keys to
+    policies/vehicles: a claim can legitimately fail because its policy_number never
+    resolved via policy-db-mcp (spec §8), and that row must still be insertable.
+    """
+
+    __tablename__ = "claims"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    policy_number: Mapped[str]
+    vin: Mapped[str]
+    narrative_text: Mapped[str]
+    status: Mapped[str]
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.UTC)
+    )
+    recommendation: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    clarification: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    error_message: Mapped[str | None] = mapped_column()
