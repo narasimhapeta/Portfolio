@@ -90,10 +90,12 @@ All models are served via Azure AI Foundry / Azure OpenAI Service. Tiering refle
 | Coverage/RAG | GPT-5 (full) | Grounded reasoning over retrieved policy text with correct citation is the highest-stakes step. |
 | Fraud-Risk | GPT-5 (full) | Reasoning over multiple weak signals; both false positives and false negatives are costly. |
 | Adjuster-Summary | GPT-5-mini | Summarizes already-structured upstream output; lower reasoning burden. |
-| Supervisor/orchestrator | GPT-5-mini | Frequent, cheap confidence-check/routing calls, not deep reasoning. |
+| Supervisor/orchestrator | GPT-5-mini *(superseded — see note)* | Frequent, cheap confidence-check/routing calls, not deep reasoning. |
 | Eval judge | GPT-5 (full); a second distinct judge model spot-checks any output produced by GPT-5 itself | Avoids a model favoring its own outputs (self-preference bias) during eval. |
 
 *Note: model names above reflect the Azure OpenAI/Foundry catalog as of 2026-08-10 (GPT-5 family, including newer variants like GPT-5.6 already shipping). Re-check the live Azure AI Foundry model catalog at implementation time and swap in whatever the current equivalent nano/mini/full tiers are — the tiering strategy (cheap model for structured/high-volume steps, strong model for grounded/high-stakes reasoning) is the durable part of this decision, not the specific model name.*
+
+*Supervisor row superseded during Phase 6 planning: the Supervisor's actual job (§3.1 — checking per-field confidence floats and required-field presence that the Extraction Agent already computed) is a threshold check with no natural-language reasoning involved, so it's implemented as a deterministic Python predicate instead of an LLM call — no Supervisor deployment exists. See [Phase 6's plan](../plans/2026-08-15-phase-6-supervisor-orchestration-graph.md) (Architecture section) for the full rationale, confirmed with the project owner before implementation.*
 
 **Fraud-risk approach:** LLM-based reasoning over MCP-sourced signals, not a trained ML classifier. Rationale: no ML training pipeline/labeled fraud dataset is needed, it fits the agentic architecture directly (same tool-calling pattern as Coverage), and it produces an explainable rationale an adjuster can read — appropriate for a recommendation-only system where a human makes the final call.
 
