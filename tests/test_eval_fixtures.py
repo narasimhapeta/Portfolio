@@ -44,3 +44,18 @@ def test_load_coverage_fixtures_returns_all_fixtures():
         assert fixture.claim_narrative
         assert fixture.gold_citation
 
+def test_load_fraud_fixtures_returns_all_fixtures():
+    from claims_assistant.eval_fixtures import load_fraud_fixtures
+
+    fixtures = load_fraud_fixtures()
+
+    assert len(fixtures) == 5
+    ids = {f.fixture_id for f in fixtures}
+    assert len(ids) == 5
+    tiers = {f.gold_risk_tier for f in fixtures}
+    assert tiers == {"low", "medium", "high"}
+    for fixture in fixtures:
+        assert fixture.policy_number
+        assert fixture.vin
+        assert fixture.incident_date
+        assert fixture.claim_narrative

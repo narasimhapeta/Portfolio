@@ -1,0 +1,8 @@
+{
+  "policy_number": "POL-TX-0005",
+  "vin": "1HGCV1F34LA123460",
+  "incident_date": "2026-06-01",
+  "claim_narrative": "I was rear-ended at a red light; my rear bumper and trunk are damaged.",
+  "gold_risk_tier": "medium",
+  "gold_red_flags": ["high_claim_frequency"]
+}

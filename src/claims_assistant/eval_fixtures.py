@@ -8,6 +8,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from claims_assistant.agents.fraud_signals import RedFlagCode
 from claims_assistant.fnol_schema import FNOLFacts
 
 FIXTURES_ROOT = Path(__file__).resolve().parents[2] / "data" / "eval_fixtures"
@@ -62,6 +63,44 @@ def load_coverage_fixtures() -> list[CoverageFixture]:
                 claim_narrative=data.claim_narrative,
                 gold_determination=data.gold_determination,
                 gold_citation=data.gold_citation,
+            )
+        )
+    return fixtures
+
+
+class _FraudFixtureData(BaseModel):
+    policy_number: str
+    vin: str
+    incident_date: str
+    claim_narrative: str
+    gold_risk_tier: Literal["low", "medium", "high"]
+    gold_red_flags: list[RedFlagCode]
+
+
+@dataclass(frozen=True)
+class FraudFixture:
+    fixture_id: str
+    policy_number: str
+    vin: str
+    incident_date: str
+    claim_narrative: str
+    gold_risk_tier: Literal["low", "medium", "high"]
+    gold_red_flags: list[RedFlagCode]
+
+
+def load_fraud_fixtures() -> list[FraudFixture]:
+    fixtures = []
+    for json_path in sorted(FRAUD_FIXTURES_DIR.glob("*.json")):
+        data = _FraudFixtureData.model_validate_json(json_path.read_text(encoding="utf-8"))
+        fixtures.append(
+            FraudFixture(
+                fixture_id=json_path.stem,
+                policy_number=data.policy_number,
+                vin=data.vin,
+                incident_date=data.incident_date,
+                claim_narrative=data.claim_narrative,
+                gold_risk_tier=data.gold_risk_tier,
+                gold_red_flags=data.gold_red_flags,
             )
         )
     return fixtures
