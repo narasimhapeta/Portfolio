@@ -20,6 +20,12 @@ def test_settings_reads_from_env(monkeypatch):
     monkeypatch.setenv(
         "AZURE_OPENAI_ADJUSTER_SUMMARY_DEPLOYMENT", "test-adjuster-summary-deployment"
         )
+    monkeypatch.setenv(
+        "AZURE_OPENAI_EVAL_JUDGE_PRIMARY_DEPLOYMENT", "test-judge-primary-deployment"
+    )
+    monkeypatch.setenv(
+        "AZURE_OPENAI_EVAL_JUDGE_SECONDARY_DEPLOYMENT", "test-judge-secondary-deployment"
+    )
     monkeypatch.setenv("AZURE_SEARCH_ENDPOINT", "https://example.search.windows.net")
     monkeypatch.setenv("AZURE_SEARCH_API_KEY", "test-search-key")
     monkeypatch.setenv("AZURE_SEARCH_INDEX_NAME", "test-policy-documents")
@@ -43,6 +49,12 @@ def test_settings_reads_from_env(monkeypatch):
     assert settings.azure_openai_embedding_deployment == "test-embedding-deployment"
     assert settings.azure_openai_fraud_deployment == "test-fraud-deployment"
     assert settings.azure_openai_adjuster_summary_deployment == "test-adjuster-summary-deployment"
+    assert settings.azure_openai_eval_judge_primary_deployment == "test-judge-primary-deployment"
+    assert (
+        settings.azure_openai_eval_judge_secondary_deployment
+        == "test-judge-secondary-deployment"
+    )
+
     assert settings.azure_search_endpoint == "https://example.search.windows.net"
     assert settings.azure_search_api_key == "test-search-key"
     assert settings.azure_search_index_name == "test-policy-documents"

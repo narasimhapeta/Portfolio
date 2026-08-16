@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     azure_openai_embedding_deployment: str = ""
     azure_openai_fraud_deployment: str = ""
     azure_openai_adjuster_summary_deployment: str = ""
+    azure_openai_eval_judge_primary_deployment: str = ""
+    azure_openai_eval_judge_secondary_deployment: str = ""
     azure_search_endpoint: str = ""
     azure_search_api_key: str = ""
     azure_search_index_name: str = "policy-documents"
