@@ -1,0 +1,15 @@
+{
+  "incident_datetime": "2025-10-09T22:15",
+  "location": "Van Ness Ave, San Francisco, CA",
+  "parties": [
+    {"role": "policyholder", "name": "James Whitfield", "contact": null},
+    {"role": "other_driver", "name": "Carla Nguyen", "contact": null}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Tesla Model 3"},
+    {"role": "other_vehicle", "vin": null, "description": "Carla Nguyen's vehicle"}
+  ],
+  "injuries": false,
+  "injury_description": null,
+  "narrative_summary": "Policyholder's vehicle was rear-ended at a stoplight on Van Ness Ave, San Francisco, CA while logged into a rideshare app awaiting a ride request, no passenger yet aboard; rear bumper and trunk damaged, no injuries."
+}

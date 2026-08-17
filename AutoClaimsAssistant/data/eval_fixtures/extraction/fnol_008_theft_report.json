@@ -1,0 +1,13 @@
+{
+  "incident_datetime": "2025-05-02T07:00",
+  "location": "Willow St, Buffalo, NY",
+  "parties": [
+    {"role": "policyholder", "name": "Michael Ferraro", "contact": null}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "BMW 3 Series"}
+  ],
+  "injuries": false,
+  "injury_description": null,
+  "narrative_summary": "Policyholder's BMW 3 Series was stolen overnight from the driveway of their Buffalo, NY residence between 10:00 PM and 7:00 AM; police report BPD-2025-04471 already filed. No other parties involved."
+}

@@ -1,0 +1,15 @@
+{
+  "incident_datetime": "2025-04-02T15:45",
+  "location": "9th and Mission, San Francisco, CA",
+  "parties": [
+    {"role": "policyholder", "name": "James Whitfield", "contact": null},
+    {"role": "other_driver", "name": "Aaron Feldman", "contact": null}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Tesla Model 3"},
+    {"role": "other_vehicle", "vin": null, "description": "silver Toyota Camry"}
+  ],
+  "injuries": false,
+  "injury_description": null,
+  "narrative_summary": "Intersection collision at 9th and Mission, San Francisco, CA; both drivers claim they had the green light and no traffic camera footage exists to confirm fault. Front-end damage to both vehicles, no injuries."
+}

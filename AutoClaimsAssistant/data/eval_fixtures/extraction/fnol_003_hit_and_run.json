@@ -1,0 +1,15 @@
+{
+  "incident_datetime": "2026-02-03T21:00",
+  "location": "4th Ave, Brooklyn, NY",
+  "parties": [
+    {"role": "policyholder", "name": "Linda Park", "contact": null},
+    {"role": "witness", "name": "unnamed neighbor", "contact": null}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Toyota Corolla"},
+    {"role": "other_vehicle", "vin": null, "description": "dark-colored sedan, fled scene, no plate captured"}
+  ],
+  "injuries": false,
+  "injury_description": null,
+  "narrative_summary": "Hit-and-run: policyholder's parked Toyota Corolla was struck by an unidentified dark sedan that fled the scene; a neighbor witnessed the vehicle leaving but did not get identifying information. No injuries, policyholder was not present."
+}

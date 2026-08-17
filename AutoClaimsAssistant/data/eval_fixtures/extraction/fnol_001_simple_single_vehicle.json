@@ -1,0 +1,15 @@
+{
+  "incident_datetime": "2025-09-14T17:30",
+  "location": "Elm Street, Sacramento, CA",
+  "parties": [
+    {"role": "policyholder", "name": "Maria Gonzalez", "contact": null},
+    {"role": "other_driver", "name": "Kevin Ortiz", "contact": "916-555-0142"}
+  ],
+  "vehicles": [
+    {"role": "policyholder_vehicle", "vin": null, "description": "Ford Focus"},
+    {"role": "other_vehicle", "vin": null, "description": "blue Honda Civic"}
+  ],
+  "injuries": false,
+  "injury_description": null,
+  "narrative_summary": "Policyholder rear-ended another vehicle stopped at a red light on Elm Street, Sacramento, CA; minor bumper damage to both vehicles, no injuries."
+}

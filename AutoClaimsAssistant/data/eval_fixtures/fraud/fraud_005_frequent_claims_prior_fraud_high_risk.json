@@ -1,0 +1,8 @@
+{
+  "policy_number": "POL-CA-0002",
+  "vin": "5YJ3E1EA7JF123457",
+  "incident_date": "2026-02-01",
+  "claim_narrative": "My Tesla Model 3 was stolen from my driveway overnight; I have no additional details.",
+  "gold_risk_tier": "high",
+  "gold_red_flags": ["prior_fraud_flag", "high_claim_frequency"]
+}
