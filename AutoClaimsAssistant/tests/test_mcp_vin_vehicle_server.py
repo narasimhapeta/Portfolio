@@ -1,21 +1,17 @@
 # tests/test_mcp_vin_vehicle_server.py
-import sys
-
 import pytest
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+from claims_assistant.config import get_settings
 
 pytestmark = pytest.mark.integration
 
-SERVER_PARAMS = StdioServerParameters(
-    command=sys.executable,
-    args=["-m", "claims_assistant.mcp_servers.vin_vehicle"],
-)
-
 
 @pytest.mark.asyncio
-async def test_decode_vin_tool_call(seeded_db):
-    async with stdio_client(SERVER_PARAMS) as (read, write):
+async def test_decode_vin_tool_call(seeded_db, mcp_servers):
+    settings = get_settings()
+    async with streamable_http_client(settings.vin_vehicle_mcp_url) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool("decode_vin", {"vin": "1FTFW1ET5EF123461"})
@@ -27,8 +23,9 @@ async def test_decode_vin_tool_call(seeded_db):
 
 
 @pytest.mark.asyncio
-async def test_decode_vin_tool_call_errors_for_unknown_vin(seeded_db):
-    async with stdio_client(SERVER_PARAMS) as (read, write):
+async def test_decode_vin_tool_call_errors_for_unknown_vin(seeded_db, mcp_servers):
+    settings = get_settings()
+    async with streamable_http_client(settings.vin_vehicle_mcp_url) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool("decode_vin", {"vin": "0000000000000UNKN"})
