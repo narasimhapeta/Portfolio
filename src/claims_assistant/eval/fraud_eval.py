@@ -1,6 +1,8 @@
 # src/claims_assistant/eval/fraud_eval.py
 from __future__ import annotations
 
+from typing import get_args
+
 from agent_framework import Agent
 
 from claims_assistant.agents.coverage_agent import lookup_policy_by_number
@@ -11,6 +13,7 @@ from claims_assistant.agents.fraud_agent import (
 )
 from claims_assistant.agents.fraud_signals import (
     FraudSignals,
+    RedFlagCode,
     compute_fraud_signals,
     determine_actual_red_flags,
 )
@@ -19,15 +22,25 @@ from claims_assistant.eval.results import EvalResult, compute_composite_score
 from claims_assistant.eval_fixtures import FraudFixture
 
 
-def _evidence_text(signals: FraudSignals) -> str:
+def _evidence_text(
+    signals: FraudSignals, actual_flags: set[RedFlagCode], claim_narrative: str
+) -> str:
+    flags_block = "\n".join(
+        f"- {code}: {'TRUE' if code in actual_flags else 'false'}"
+        for code in get_args(RedFlagCode)
+    )
     return (
+        f"Claim narrative: {claim_narrative}\n\n"
+        f"Vehicle: {signals.vehicle_year} {signals.vehicle_make} {signals.vehicle_model}\n"
         f"Days since policy effective: {signals.days_since_policy_effective}\n"
         f"Prior claim count: {signals.claim_count}\n"
         f"Prior fraud-flagged claims: {signals.prior_fraud_flag_count}\n"
         f"Days since most recent prior claim: {signals.days_since_most_recent_prior_claim}\n"
         f"Highest prior claim amount: {signals.highest_prior_claim_amount_usd}\n"
-        f"Vehicle market value: {signals.vehicle_market_value_usd}\n"
+        f"Vehicle market value: {signals.vehicle_market_value_usd}\n\n"
+        f"Computed red-flag signals:\n{flags_block}\n"
     )
+
 
 
 async def run_fraud_eval(
@@ -61,7 +74,8 @@ async def run_fraud_eval(
         flags_correct = float(set(assessment.red_flags) == set(fixture.gold_red_flags))
         correctness = (tier_correct + flags_correct) / 2
 
-        evidence_text = _evidence_text(signals)
+        evidence_text = _evidence_text(signals, actual_flags, fixture.claim_narrative)
+
         primary = await judge_grounding(judge_primary, assessment.rationale, evidence_text)
         secondary = await judge_grounding(judge_secondary, assessment.rationale, evidence_text)
         # Both judges must agree the rationale is grounded -- see Design Decisions: the

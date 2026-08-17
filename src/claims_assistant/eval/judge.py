@@ -20,9 +20,20 @@ You are judging only whether the stated reasoning is faithful to the evidence gi
 Set "grounded" to true only if every specific factual claim in the CLAIM text traces back \
 to something actually stated in the EVIDENCE. Set it to false if the CLAIM asserts \
 anything -- a number, a clause, a fact -- that the EVIDENCE does not support, or that \
-contradicts the EVIDENCE. "reasoning" should briefly explain your verdict, quoting the \
-specific part of the CLAIM that is or isn't supported.
+contradicts the EVIDENCE.
+
+A CLAIM is allowed to draw a reasonable category, label, or summary from facts that ARE \
+present in the EVIDENCE -- for example, calling weather damage to a parked vehicle a \
+"comprehensive-type loss," or summarizing several individually-listed true/false signals as \
+"no red flags." That is normal reasoning over the evidence, not fabrication. Only mark \
+"grounded" false when the CLAIM states a specific fact, number, name, date, or computed \
+value that is absent from or contradicted by the EVIDENCE -- not merely paraphrased, \
+categorized, or summarized differently than the EVIDENCE happens to phrase it.
+
+"reasoning" should briefly explain your verdict, quoting the specific part of the CLAIM \
+that is or isn't supported.
 """
+
 
 
 def build_judge_agent(settings: Settings, deployment: str) -> Agent:

@@ -32,7 +32,10 @@ async def run_coverage_eval(
             settings, form_id=policy.policy_form_id, query_text=fixture.claim_narrative
         )
         cited = [c for c in chunks if c.chunk_id in determination.citations]
-        evidence_text = "\n\n".join(f"[{c.chunk_id}] {c.content}" for c in cited)
+        clauses_text = "\n\n".join(f"[{c.chunk_id}] {c.content}" for c in cited)
+        evidence_text = f"Claim narrative:\n{
+            fixture.claim_narrative}\n\nRetrieved policy clauses:\n{clauses_text}"
+
 
         primary = await judge_grounding(judge_primary, determination.rationale, evidence_text)
         secondary = await judge_grounding(
