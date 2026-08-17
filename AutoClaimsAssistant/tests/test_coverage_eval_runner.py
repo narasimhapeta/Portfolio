@@ -13,7 +13,7 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
-async def test_run_coverage_eval_returns_one_result_per_fixture(seeded_db):
+async def test_run_coverage_eval_returns_one_result_per_fixture(seeded_db, mcp_servers):
     settings = get_settings()
     coverage_agent = build_coverage_agent(settings)
     judge_primary = build_judge_agent(settings, settings.azure_openai_eval_judge_primary_deployment)

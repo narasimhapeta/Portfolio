@@ -80,4 +80,4 @@ async def get_claims_history(policy_number: str) -> ClaimsHistoryResult:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=8102, stateless_http=True)

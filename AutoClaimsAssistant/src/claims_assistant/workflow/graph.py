@@ -24,7 +24,7 @@ def build_claim_intake_workflow(settings: Settings) -> Workflow:
     clarification = ClarificationExecutor()
     fan_out_gate = FanOutGateExecutor()
     coverage = CoverageExecutor(build_coverage_agent(settings), settings)
-    fraud_risk = FraudRiskExecutor(build_fraud_agent(settings))
+    fraud_risk = FraudRiskExecutor(build_fraud_agent(settings), settings)
     adjuster_summary = AdjusterSummaryExecutor(build_adjuster_summary_agent(settings))
 
     return (

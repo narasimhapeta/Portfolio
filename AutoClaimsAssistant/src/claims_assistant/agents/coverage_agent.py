@@ -1,12 +1,10 @@
 # src/claims_assistant/agents/coverage_agent.py
 from __future__ import annotations
 
-import sys
-
 from agent_framework import Agent, ChatOptions
 from agent_framework.openai import OpenAIChatCompletionClient
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 
 from claims_assistant.agents.coverage_schema import CoverageDetermination
 from claims_assistant.config import Settings
@@ -40,12 +38,6 @@ narrative affirmatively confirms the excluded condition (e.g. the policyholder s
 have the endorsement); silence means "needs_info", not "deny".
 """
 
-_POLICY_DB_SERVER_PARAMS = StdioServerParameters(
-    command=sys.executable,
-    args=["-m", "claims_assistant.mcp_servers.policy_db"],
-)
-
-
 def build_coverage_chat_client(settings: Settings) -> OpenAIChatCompletionClient:
     return OpenAIChatCompletionClient(
         model=settings.azure_openai_coverage_deployment,
@@ -60,12 +52,12 @@ def build_coverage_agent(settings: Settings) -> Agent:
     return Agent(client=client, instructions=INSTRUCTIONS)
 
 
-async def lookup_policy_by_number(policy_number: str) -> PolicyLookupResult:
+async def lookup_policy_by_number(settings: Settings, policy_number: str) -> PolicyLookupResult:
     # Raises rather than returning a structured "lookup failed" output (spec §8 describes
     # the latter) — there's no API layer yet to translate this into a response; Phase 7
     # (FastAPI orchestrator endpoints) is where this becomes a caught, surfaced error
     # instead of a propagating exception.
-    async with stdio_client(_POLICY_DB_SERVER_PARAMS) as (read, write):
+    async with streamable_http_client(settings.policy_db_mcp_url) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool(
@@ -105,7 +97,8 @@ def _build_prompt(
 async def determine_coverage(
     agent: Agent, settings: Settings, policy_number: str, claim_narrative: str
 ) -> CoverageDetermination:
-    policy = await lookup_policy_by_number(policy_number)
+    policy = await lookup_policy_by_number(settings, policy_number)
+
     chunks = await retrieve_policy_chunks(
         settings, form_id=policy.policy_form_id, query_text=claim_narrative
     )

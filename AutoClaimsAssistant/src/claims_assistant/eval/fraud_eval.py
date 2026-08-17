@@ -17,6 +17,7 @@ from claims_assistant.agents.fraud_signals import (
     compute_fraud_signals,
     determine_actual_red_flags,
 )
+from claims_assistant.config import Settings
 from claims_assistant.eval.judge import judge_grounding
 from claims_assistant.eval.results import EvalResult, compute_composite_score
 from claims_assistant.eval_fixtures import FraudFixture
@@ -42,17 +43,18 @@ def _evidence_text(
     )
 
 
-
 async def run_fraud_eval(
     fraud_agent: Agent,
     judge_primary: Agent,
     judge_secondary: Agent,
+    settings: Settings,
     fixtures: list[FraudFixture],
 ) -> list[EvalResult]:
     results = []
     for fixture in fixtures:
         assessment = await assess_fraud_risk(
             fraud_agent,
+            settings,
             fixture.policy_number,
             fixture.vin,
             fixture.incident_date,
@@ -60,9 +62,9 @@ async def run_fraud_eval(
         )
         tier_correct = float(assessment.risk_tier == fixture.gold_risk_tier)
 
-        policy = await lookup_policy_by_number(fixture.policy_number)
-        claims_history = await lookup_claims_history(fixture.policy_number)
-        vehicle = await lookup_vehicle_by_vin(fixture.vin)
+        policy = await lookup_policy_by_number(settings, fixture.policy_number)
+        claims_history = await lookup_claims_history(settings, fixture.policy_number)
+        vehicle = await lookup_vehicle_by_vin(settings, fixture.vin)
         signals = compute_fraud_signals(
             policy, claims_history, vehicle, fixture.incident_date
         )

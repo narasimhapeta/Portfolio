@@ -13,7 +13,7 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
-async def test_run_fraud_eval_returns_one_result_per_fixture(seeded_db):
+async def test_run_fraud_eval_returns_one_result_per_fixture(seeded_db, mcp_servers):
     settings = get_settings()
     fraud_agent = build_fraud_agent(settings)
     judge_primary = build_judge_agent(settings, settings.azure_openai_eval_judge_primary_deployment)
@@ -22,7 +22,7 @@ async def test_run_fraud_eval_returns_one_result_per_fixture(seeded_db):
     )
     fixtures = load_fraud_fixtures()
 
-    results = await run_fraud_eval(fraud_agent, judge_primary, judge_secondary, fixtures)
+    results = await run_fraud_eval(fraud_agent, judge_primary, judge_secondary, settings, fixtures)
 
     assert len(results) == len(fixtures)
     for result in results:

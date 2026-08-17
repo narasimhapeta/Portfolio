@@ -8,7 +8,7 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
-async def test_collision_claim_on_full_coverage_policy_is_approved(seeded_db):
+async def test_collision_claim_on_full_coverage_policy_is_approved(seeded_db, mcp_servers):
     settings = get_settings()
     agent = build_coverage_agent(settings)
 
@@ -28,7 +28,7 @@ async def test_collision_claim_on_full_coverage_policy_is_approved(seeded_db):
 
 
 @pytest.mark.asyncio
-async def test_collision_claim_on_liability_only_policy_is_denied(seeded_db):
+async def test_collision_claim_on_liability_only_policy_is_denied(seeded_db, mcp_servers):
     settings = get_settings()
     agent = build_coverage_agent(settings)
 
@@ -47,7 +47,7 @@ async def test_collision_claim_on_liability_only_policy_is_denied(seeded_db):
 
 
 @pytest.mark.asyncio
-async def test_delivery_use_collision_with_unstated_endorsement_needs_info(seeded_db):
+async def test_delivery_use_collision_with_unstated_endorsement_needs_info(seeded_db, mcp_servers):
     settings = get_settings()
     agent = build_coverage_agent(settings)
 

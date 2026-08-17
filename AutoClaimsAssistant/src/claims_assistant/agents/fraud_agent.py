@@ -1,13 +1,12 @@
 # src/claims_assistant/agents/fraud_agent.py
 from __future__ import annotations
 
-import sys
 from typing import Literal, cast
 
 from agent_framework import Agent, ChatOptions
 from agent_framework.openai import OpenAIChatCompletionClient
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 
 from claims_assistant.agents.coverage_agent import lookup_policy_by_number
 from claims_assistant.agents.fraud_schema import FraudRiskAssessment
@@ -50,15 +49,6 @@ computed numbers (e.g. days since policy effective, claim counts, dollar amounts
 justify the score, so an adjuster can verify each claim against the data you were given.
 """
 
-_CLAIMS_HISTORY_SERVER_PARAMS = StdioServerParameters(
-    command=sys.executable,
-    args=["-m", "claims_assistant.mcp_servers.claims_history"],
-)
-_VIN_VEHICLE_SERVER_PARAMS = StdioServerParameters(
-    command=sys.executable,
-    args=["-m", "claims_assistant.mcp_servers.vin_vehicle"],
-)
-
 _ALL_RED_FLAG_CODES: tuple[RedFlagCode, ...] = (
     "recent_policy_inception",
     "high_claim_frequency",
@@ -83,9 +73,9 @@ def build_fraud_agent(settings: Settings) -> Agent:
 
 
 async def _call_mcp_tool(
-    server_params: StdioServerParameters, tool_name: str, arguments: dict[str, str]
+    url: str, tool_name: str, arguments: dict[str, str]
 ) -> dict[str, object]:
-    async with stdio_client(server_params) as (read, write):
+    async with streamable_http_client(url) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool(tool_name, arguments)
@@ -95,15 +85,17 @@ async def _call_mcp_tool(
     return cast(dict[str, object], result.structured_content)
 
 
-async def lookup_claims_history(policy_number: str) -> ClaimsHistoryResult:
+async def lookup_claims_history(settings: Settings, policy_number: str) -> ClaimsHistoryResult:
     content = await _call_mcp_tool(
-        _CLAIMS_HISTORY_SERVER_PARAMS, "get_claims_history", {"policy_number": policy_number}
+        settings.claims_history_mcp_url,
+        "get_claims_history",
+        {"policy_number": policy_number},
     )
     return ClaimsHistoryResult.model_validate(content)
 
 
-async def lookup_vehicle_by_vin(vin: str) -> VehicleLookupResult:
-    content = await _call_mcp_tool(_VIN_VEHICLE_SERVER_PARAMS, "decode_vin", {"vin": vin})
+async def lookup_vehicle_by_vin(settings: Settings, vin: str) -> VehicleLookupResult:
+    content = await _call_mcp_tool(settings.vin_vehicle_mcp_url, "decode_vin", {"vin": vin})
     return VehicleLookupResult.model_validate(content)
 
 
@@ -166,14 +158,15 @@ def _build_prompt(
 
 async def assess_fraud_risk(
     agent: Agent,
+    settings: Settings,
     policy_number: str,
     vin: str,
     incident_date: str,
     claim_narrative: str,
 ) -> FraudRiskAssessment:
-    policy = await lookup_policy_by_number(policy_number)
-    claims_history = await lookup_claims_history(policy_number)
-    vehicle = await lookup_vehicle_by_vin(vin)
+    policy = await lookup_policy_by_number(settings, policy_number)
+    claims_history = await lookup_claims_history(settings, policy_number)
+    vehicle = await lookup_vehicle_by_vin(settings, vin)
     signals = compute_fraud_signals(policy, claims_history, vehicle, incident_date)
     actual_flags = determine_actual_red_flags(signals)
     prompt = _build_prompt(policy, signals, actual_flags, claim_narrative)

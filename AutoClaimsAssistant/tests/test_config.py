@@ -29,6 +29,10 @@ def test_settings_reads_from_env(monkeypatch):
     monkeypatch.setenv("AZURE_SEARCH_ENDPOINT", "https://example.search.windows.net")
     monkeypatch.setenv("AZURE_SEARCH_API_KEY", "test-search-key")
     monkeypatch.setenv("AZURE_SEARCH_INDEX_NAME", "test-policy-documents")
+    monkeypatch.setenv("POLICY_DB_MCP_URL", "http://policy-db-test:8101/mcp")
+    monkeypatch.setenv("CLAIMS_HISTORY_MCP_URL", "http://claims-history-test:8102/mcp")
+    monkeypatch.setenv("VIN_VEHICLE_MCP_URL", "http://vin-vehicle-test:8103/mcp")
+
 
     settings = Settings()
 
@@ -58,7 +62,12 @@ def test_settings_reads_from_env(monkeypatch):
     assert settings.azure_search_endpoint == "https://example.search.windows.net"
     assert settings.azure_search_api_key == "test-search-key"
     assert settings.azure_search_index_name == "test-policy-documents"
+    assert settings.policy_db_mcp_url == "http://policy-db-test:8101/mcp"
+    assert settings.claims_history_mcp_url == "http://claims-history-test:8102/mcp"
+    assert settings.vin_vehicle_mcp_url == "http://vin-vehicle-test:8103/mcp"
+
 
 
 def test_get_settings_is_cached():
     assert get_settings() is get_settings()
+    

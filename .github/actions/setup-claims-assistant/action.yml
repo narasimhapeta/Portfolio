@@ -1,0 +1,16 @@
+# .github/actions/setup-claims-assistant/action.yml
+name: Setup AutoClaimsAssistant Python environment
+description: Install uv and sync AutoClaimsAssistant's dependencies
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      shell: bash
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Add uv to PATH
+      shell: bash
+      run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    - name: Install dependencies
+      shell: bash
+      working-directory: AutoClaimsAssistant
+      run: uv sync --frozen --group dev
