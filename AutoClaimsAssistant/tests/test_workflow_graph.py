@@ -25,7 +25,7 @@ def test_build_claim_intake_workflow_builds_without_error():
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_workflow_produces_claim_recommendation_for_normal_claim(seeded_db):
+async def test_workflow_produces_claim_recommendation_for_normal_claim(seeded_db, mcp_servers):
     workflow = build_claim_intake_workflow(get_settings())
     request = ClaimIntakeRequest(
         policy_number="POL-CA-0003",

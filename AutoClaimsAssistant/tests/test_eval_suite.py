@@ -23,7 +23,7 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
-async def test_eval_suite_produces_report_above_baseline(seeded_db):
+async def test_eval_suite_produces_report_above_baseline(seeded_db, mcp_servers):
     settings = get_settings()
     judge_primary = build_judge_agent(
         settings, settings.azure_openai_eval_judge_primary_deployment
@@ -43,8 +43,9 @@ async def test_eval_suite_produces_report_above_baseline(seeded_db):
         load_coverage_fixtures(),
     )
     fraud_results = await run_fraud_eval(
-        build_fraud_agent(settings), judge_primary, judge_secondary, load_fraud_fixtures()
+        build_fraud_agent(settings), judge_primary, judge_secondary, settings, load_fraud_fixtures()
     )
+
 
     report = build_eval_report(extraction_results + coverage_results + fraud_results)
     summary = summarize_by_agent(report)

@@ -6,14 +6,14 @@ from claims_assistant.config import get_settings
 
 pytestmark = pytest.mark.integration
 
-
 @pytest.mark.asyncio
-async def test_clean_claim_on_low_history_policy_is_low_risk(seeded_db):
+async def test_clean_claim_on_low_history_policy_is_low_risk(seeded_db, mcp_servers):
     settings = get_settings()
     agent = build_fraud_agent(settings)
 
     result = await assess_fraud_risk(
         agent,
+        settings,
         policy_number="POL-CA-0003",
         vin="1C4RJFBG5FC123458",
         incident_date="2026-03-10",
@@ -29,13 +29,14 @@ async def test_clean_claim_on_low_history_policy_is_low_risk(seeded_db):
 
 @pytest.mark.asyncio
 async def test_theft_claim_shortly_after_policy_start_with_prior_fraud_is_high_risk(
-    seeded_db,
+    seeded_db, mcp_servers
 ):
     settings = get_settings()
     agent = build_fraud_agent(settings)
 
     result = await assess_fraud_risk(
         agent,
+        settings,
         policy_number="POL-TX-0006",
         vin="1FTFW1ET5EF123461",
         incident_date="2025-08-01",

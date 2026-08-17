@@ -118,15 +118,17 @@ def _incident_date(incident_datetime: str) -> str:
 
 
 class FraudRiskExecutor(Executor):
-    def __init__(self, agent: Agent, *, id: str = "fraud_risk") -> None:
+    def __init__(self, agent: Agent, settings: Settings, *, id: str = "fraud_risk") -> None:
         super().__init__(id=id)
         self._agent = agent
+        self._settings = settings
 
     @handler
     async def run(self, message: ExtractionResult, ctx: WorkflowContext[FraudOutcome]) -> None:
         incident_date = _incident_date(message.extraction.facts.incident_datetime)
         assessment = await assess_fraud_risk(
             self._agent,
+            self._settings,
             message.request.policy_number,
             message.request.vin,
             incident_date,

@@ -27,7 +27,8 @@ async def run_coverage_eval(
         citation_correct = float(fixture.gold_citation in determination.citations)
         correctness = (determination_correct + citation_correct) / 2
 
-        policy = await lookup_policy_by_number(fixture.policy_number)
+        policy = await lookup_policy_by_number(settings, fixture.policy_number)
+
         chunks = await retrieve_policy_chunks(
             settings, form_id=policy.policy_form_id, query_text=fixture.claim_narrative
         )
