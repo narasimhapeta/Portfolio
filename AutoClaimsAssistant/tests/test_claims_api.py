@@ -155,7 +155,7 @@ async def test_get_claims_returns_404_for_unknown_id():
 
 @pytest.mark.asyncio
 async def test_post_claims_full_pipeline_returns_recommendation_via_real_http_request(
-    seeded_db,
+    seeded_db, mcp_servers
 ):
     app = create_app()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
