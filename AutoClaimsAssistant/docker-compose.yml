@@ -16,16 +16,58 @@ services:
       timeout: 5s
       retries: 5
 
+  policy-db-mcp:
+    build: .
+    command: uv run python -m claims_assistant.mcp_servers.policy_db
+    environment:
+      POSTGRES_HOST: postgres
+    ports:
+      - "8101:8101"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  claims-history-mcp:
+    build: .
+    command: uv run python -m claims_assistant.mcp_servers.claims_history
+    environment:
+      POSTGRES_HOST: postgres
+    ports:
+      - "8102:8102"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  vin-vehicle-mcp:
+    build: .
+    command: uv run python -m claims_assistant.mcp_servers.vin_vehicle
+    environment:
+      POSTGRES_HOST: postgres
+    ports:
+      - "8103:8103"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build: .
     env_file: .env
     environment:
       POSTGRES_HOST: postgres
+      POLICY_DB_MCP_URL: http://policy-db-mcp:8101/mcp
+      CLAIMS_HISTORY_MCP_URL: http://claims-history-mcp:8102/mcp
+      VIN_VEHICLE_MCP_URL: http://vin-vehicle-mcp:8103/mcp
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      policy-db-mcp:
+        condition: service_started
+      claims-history-mcp:
+        condition: service_started
+      vin-vehicle-mcp:
+        condition: service_started
 
 volumes:
   pgdata:
