@@ -1,0 +1,106 @@
+# .github/workflows/auto-claims-assistant-ci.yml
+name: AutoClaimsAssistant CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "AutoClaimsAssistant/**"
+      - ".github/workflows/auto-claims-assistant-ci.yml"
+      - ".github/actions/setup-claims-assistant/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "AutoClaimsAssistant/**"
+      - ".github/workflows/auto-claims-assistant-ci.yml"
+      - ".github/actions/setup-claims-assistant/**"
+
+defaults:
+  run:
+    working-directory: AutoClaimsAssistant
+
+env:
+  AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+  AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+  AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+  AZURE_OPENAI_CHAT_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT }}
+  AZURE_OPENAI_COVERAGE_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_COVERAGE_DEPLOYMENT }}
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EMBEDDING_DEPLOYMENT }}
+  AZURE_OPENAI_FRAUD_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_FRAUD_DEPLOYMENT }}
+  AZURE_OPENAI_ADJUSTER_SUMMARY_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_ADJUSTER_SUMMARY_DEPLOYMENT }}
+  AZURE_OPENAI_EVAL_JUDGE_PRIMARY_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EVAL_JUDGE_PRIMARY_DEPLOYMENT }}
+  AZURE_OPENAI_EVAL_JUDGE_SECONDARY_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EVAL_JUDGE_SECONDARY_DEPLOYMENT }}
+  AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+  AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
+  AZURE_SEARCH_INDEX_NAME: ${{ secrets.AZURE_SEARCH_INDEX_NAME }}
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: claims_assistant
+  POSTGRES_USER: claims_assistant
+  POSTGRES_PASSWORD: devpassword
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-claims-assistant
+      - run: uv run ruff check .
+      - run: uv run mypy src
+
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-claims-assistant
+      - run: uv run pytest -v -m "not integration"
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t claims-assistant:ci .
+
+  integration-test:
+    needs: [lint, unit-test, docker-build]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: claims_assistant
+          POSTGRES_USER: claims_assistant
+          POSTGRES_PASSWORD: devpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U claims_assistant"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-claims-assistant
+      - run: uv run pytest -v -m integration --ignore=tests/test_eval_suite.py
+
+  eval-gate:
+    needs: [integration-test]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: claims_assistant
+          POSTGRES_USER: claims_assistant
+          POSTGRES_PASSWORD: devpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U claims_assistant"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-claims-assistant
+      - run: uv run pytest tests/test_eval_suite.py -v -m integration -s
