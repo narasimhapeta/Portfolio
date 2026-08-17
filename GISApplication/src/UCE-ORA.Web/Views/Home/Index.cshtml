@@ -1,0 +1,31 @@
+﻿@{
+    ViewData["Title"] = "UCE-ORA";
+}
+
+<div id="sidebar">
+    <h2>UCE-ORA</h2>
+    <p>Oncor Corridor Encroachment Analyzer</p>
+
+    <label>
+        Latitude
+        <input type="number" id="lat" step="0.0001" value="32.7767" />
+    </label>
+    <label>
+        Longitude
+        <input type="number" id="lng" step="0.0001" value="-96.7970" />
+    </label>
+    <label>
+        Radius (meters)
+        <input type="number" id="radius" value="500" min="10" max="50000" />
+    </label>
+
+    <button id="analyzeBtn">Analyze Risk</button>
+
+    <div id="results"></div>
+</div>
+
+<div id="map"></div>
+
+@section Scripts {
+    <script src="~/js/map.js"></script>
+}

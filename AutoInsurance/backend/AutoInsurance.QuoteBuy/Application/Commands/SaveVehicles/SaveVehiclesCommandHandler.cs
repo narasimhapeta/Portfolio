@@ -19,14 +19,15 @@ public class SaveVehiclesCommandHandler : IRequestHandler<SaveVehiclesCommand, R
 
     public async Task<Result> Handle(SaveVehiclesCommand request, CancellationToken cancellationToken)
     {
-        var quote = await _quoteRepository.GetWithVehiclesAsync(request.QuoteId, cancellationToken);
+        var quote = await _quoteRepository.GetByIdAsync(request.QuoteId, cancellationToken);
         if (quote is null)
             return Result.Failure("Quote not found.");
 
         if (quote.Status == QuoteStatus.Bound)
             return Result.Failure("Cannot modify a bound quote.");
 
-        quote.Vehicles.Clear();
+        await _quoteRepository.DeleteVehiclesAsync(request.QuoteId, cancellationToken);
+
         foreach (var dto in request.Vehicles)
         {
             quote.Vehicles.Add(new Vehicle
@@ -41,7 +42,6 @@ public class SaveVehiclesCommandHandler : IRequestHandler<SaveVehiclesCommand, R
         }
 
         quote.UpdatedAt = DateTime.UtcNow;
-        _quoteRepository.Update(quote);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

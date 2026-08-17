@@ -1,4 +1,5 @@
 using AutoInsurance.Gateway.Middleware;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
@@ -12,7 +13,13 @@ builder.Configuration
 
 var authMode = builder.Configuration["Auth:Mode"] ?? "mock";
 
-if (authMode == "b2c")
+if (authMode == "mock")
+{
+    builder.Services
+        .AddAuthentication()
+        .AddScheme<AuthenticationSchemeOptions, MockBearerHandler>("Bearer", _ => { });
+}
+else if (authMode == "b2c")
 {
     builder.Services
         .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

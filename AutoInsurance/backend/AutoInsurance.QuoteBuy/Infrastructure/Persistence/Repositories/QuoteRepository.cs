@@ -62,4 +62,13 @@ public class QuoteRepository : IQuoteRepository
 
     public async Task AddPolicyAsync(Policy policy, CancellationToken cancellationToken = default)
         => await _context.Policies.AddAsync(policy, cancellationToken);
+
+    public async Task DeleteDriversAsync(Guid quoteId, CancellationToken cancellationToken = default)
+        => await _context.Drivers.Where(d => d.QuoteId == quoteId).ExecuteDeleteAsync(cancellationToken);
+
+    public async Task DeleteVehiclesAsync(Guid quoteId, CancellationToken cancellationToken = default)
+        => await _context.Vehicles.Where(v => v.QuoteId == quoteId).ExecuteDeleteAsync(cancellationToken);
+
+    public async Task DeleteCoveragesAsync(Guid quoteId, CancellationToken cancellationToken = default)
+        => await _context.QuoteCoverages.Where(c => c.QuoteId == quoteId).ExecuteDeleteAsync(cancellationToken);
 }

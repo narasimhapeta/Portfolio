@@ -6,7 +6,7 @@
       "DownstreamPathTemplate": "/api/quote/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "quote-buy-api", "Port": 5001 }
+        { "Host": "localhost", "Port": 5001 }
       ]
     },
     {
@@ -15,7 +15,7 @@
       "DownstreamPathTemplate": "/api/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "customer-svc-api", "Port": 5002 }
+        { "Host": "localhost", "Port": 5002 }
       ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer"
@@ -27,7 +27,7 @@
       "DownstreamPathTemplate": "/api/payments/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "payment-api", "Port": 5003 }
+        { "Host": "localhost", "Port": 5003 }
       ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer"
@@ -39,7 +39,7 @@
       "DownstreamPathTemplate": "/api/documents/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "document-api", "Port": 5004 }
+        { "Host": "localhost", "Port": 5004 }
       ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer"
@@ -51,7 +51,7 @@
       "DownstreamPathTemplate": "/api/claims/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "claims-api", "Port": 5005 }
+        { "Host": "localhost", "Port": 5005 }
       ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer"

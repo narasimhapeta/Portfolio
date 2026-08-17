@@ -14,7 +14,7 @@ const schema = z.object({
   dateOfBirth: z.string().min(1, 'Required'),
   email: z.string().email('Invalid email'),
   phone: z.string().min(10, 'Enter a valid phone number'),
-  address: z.string().min(1, 'Required'),
+  street: z.string().min(1, 'Required'),
   city: z.string().min(1, 'Required'),
   state: z.string().length(2, 'Use 2-letter state code'),
   zipCode: z.string().regex(/^\d{5}$/, 'Enter 5-digit zip'),
@@ -59,8 +59,8 @@ export default function Step1PersonalInfo() {
         <FormField label="Phone" error={errors.phone?.message} required>
           <Input type="tel" {...register('phone')} placeholder="5551234567" />
         </FormField>
-        <FormField label="Street Address" error={errors.address?.message} required>
-          <Input {...register('address')} placeholder="123 Main St" />
+        <FormField label="Street Address" error={errors.street?.message} required>
+          <Input {...register('street')} placeholder="123 Main St" />
         </FormField>
         <FormField label="City" error={errors.city?.message} required>
           <Input {...register('city')} placeholder="Springfield" />

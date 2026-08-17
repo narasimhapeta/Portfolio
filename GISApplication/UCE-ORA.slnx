@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UCE-ORA.API/UCE-ORA.API.csproj" />
+    <Project Path="src/UCE-ORA.Web/UCE-ORA.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UCE-ORA.API.Tests/UCE-ORA.API.Tests.csproj" />
+  </Folder>
+</Solution>

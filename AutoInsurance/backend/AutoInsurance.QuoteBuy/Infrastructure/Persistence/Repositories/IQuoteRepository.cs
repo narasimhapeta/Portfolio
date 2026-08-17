@@ -14,4 +14,7 @@ public interface IQuoteRepository : IRepository<Quote>
     Task<Quote?> GetByQuoteNumberAsync(string quoteNumber, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CoverageType>> GetCoverageTypesAsync(CancellationToken cancellationToken = default);
     Task AddPolicyAsync(Policy policy, CancellationToken cancellationToken = default);
+    Task DeleteDriversAsync(Guid quoteId, CancellationToken cancellationToken = default);
+    Task DeleteVehiclesAsync(Guid quoteId, CancellationToken cancellationToken = default);
+    Task DeleteCoveragesAsync(Guid quoteId, CancellationToken cancellationToken = default);
 }

@@ -19,7 +19,7 @@ public class SaveCoveragesCommandHandler : IRequestHandler<SaveCoveragesCommand,
 
     public async Task<Result<decimal>> Handle(SaveCoveragesCommand request, CancellationToken cancellationToken)
     {
-        var quote = await _quoteRepository.GetWithCoveragesAsync(request.QuoteId, cancellationToken);
+        var quote = await _quoteRepository.GetByIdAsync(request.QuoteId, cancellationToken);
         if (quote is null)
             return Result<decimal>.Failure("Quote not found.");
 
@@ -29,7 +29,8 @@ public class SaveCoveragesCommandHandler : IRequestHandler<SaveCoveragesCommand,
         var coverageTypes = await _quoteRepository.GetCoverageTypesAsync(cancellationToken);
         var typeMap = coverageTypes.ToDictionary(ct => ct.Id);
 
-        quote.Coverages.Clear();
+        await _quoteRepository.DeleteCoveragesAsync(request.QuoteId, cancellationToken);
+
         decimal totalAnnual = 0;
 
         foreach (var dto in request.Coverages)
@@ -52,7 +53,6 @@ public class SaveCoveragesCommandHandler : IRequestHandler<SaveCoveragesCommand,
 
         quote.Status = QuoteStatus.Review;
         quote.UpdatedAt = DateTime.UtcNow;
-        _quoteRepository.Update(quote);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<decimal>.Success(totalAnnual);

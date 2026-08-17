@@ -4,7 +4,7 @@ export interface PersonalInfo {
   dateOfBirth: string;
   email: string;
   phone: string;
-  address: string;
+  street: string;
   city: string;
   state: string;
   zipCode: string;

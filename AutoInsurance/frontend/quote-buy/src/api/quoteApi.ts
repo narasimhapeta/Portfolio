@@ -12,13 +12,32 @@ export const quoteApi = createApi({
       query: (body) => ({ url: '/quote', method: 'POST', body }),
     }),
     saveDrivers: builder.mutation<void, { quoteId: string; drivers: Driver[] }>({
-      query: ({ quoteId, drivers }) => ({ url: `/quote/${quoteId}/drivers`, method: 'PATCH', body: { drivers } }),
+      query: ({ quoteId, drivers }) => ({
+        url: `/quote/${quoteId}/drivers`,
+        method: 'PATCH',
+        body: drivers.map(d => ({
+          driverType: d.isPrimary ? 'Primary' : 'Additional',
+          firstName: d.firstName,
+          lastName: d.lastName,
+          dateOfBirth: d.dateOfBirth,
+          licenseNumber: d.licenseNumber,
+          licenseState: d.licenseState,
+        })),
+      }),
     }),
     saveVehicles: builder.mutation<void, { quoteId: string; vehicles: Vehicle[] }>({
-      query: ({ quoteId, vehicles }) => ({ url: `/quote/${quoteId}/vehicles`, method: 'PATCH', body: { vehicles } }),
+      query: ({ quoteId, vehicles }) => ({ url: `/quote/${quoteId}/vehicles`, method: 'PATCH', body: vehicles }),
     }),
     saveCoverages: builder.mutation<void, { quoteId: string; coverages: SelectedCoverage[] }>({
-      query: ({ quoteId, coverages }) => ({ url: `/quote/${quoteId}/coverages`, method: 'PATCH', body: { coverages } }),
+      query: ({ quoteId, coverages }) => ({
+        url: `/quote/${quoteId}/coverages`,
+        method: 'PATCH',
+        body: coverages.map(c => ({
+          coverageTypeId: c.coverageTypeId,
+          limitOption: c.limits,
+          deductible: 0,
+        })),
+      }),
     }),
     getReview: builder.query<ReviewData, string>({
       query: (quoteId) => `/quote/${quoteId}/review`,

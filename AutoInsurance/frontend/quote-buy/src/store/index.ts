@@ -14,9 +14,9 @@ const safeQuoteTransform = createTransform<QuoteState, Pick<QuoteState, 'session
 const persistConfig = {
   key: 'qb_state',
   storage: {
-    getItem: (key: string) => localStorage.getItem(key),
-    setItem: (key: string, value: string) => { localStorage.setItem(key, value); },
-    removeItem: (key: string) => { localStorage.removeItem(key); },
+    getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+    setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+    removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key)),
   },
   whitelist: ['quote'],
   transforms: [safeQuoteTransform],

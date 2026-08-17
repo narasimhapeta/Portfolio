@@ -15,4 +15,4 @@ public record CreateQuoteCommand(
     string ZipCode
 ) : IRequest<Result<CreateQuoteResponse>>;
 
-public record CreateQuoteResponse(Guid QuoteId, string QuoteNumber, string ZipCode);
+public record CreateQuoteResponse(Guid QuoteId, string QuoteNumber, string ZipCode, string SessionToken, int StepReached);

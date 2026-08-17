@@ -59,7 +59,7 @@ public class CreateQuoteCommandHandler : IRequestHandler<CreateQuoteCommand, Res
         await _quoteRepository.AddAsync(quote, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<CreateQuoteResponse>.Success(new CreateQuoteResponse(quote.Id, quoteNumber, request.ZipCode));
+        return Result<CreateQuoteResponse>.Success(new CreateQuoteResponse(quote.Id, quoteNumber, request.ZipCode, sessionTokenHash, 1));
     }
 
     private static string ComputeSessionHash(string quoteNumber, string zipCode)

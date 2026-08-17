@@ -19,14 +19,15 @@ public class SaveDriversCommandHandler : IRequestHandler<SaveDriversCommand, Res
 
     public async Task<Result> Handle(SaveDriversCommand request, CancellationToken cancellationToken)
     {
-        var quote = await _quoteRepository.GetWithDriversAsync(request.QuoteId, cancellationToken);
+        var quote = await _quoteRepository.GetByIdAsync(request.QuoteId, cancellationToken);
         if (quote is null)
             return Result.Failure("Quote not found.");
 
         if (quote.Status == QuoteStatus.Bound)
             return Result.Failure("Cannot modify a bound quote.");
 
-        quote.Drivers.Clear();
+        await _quoteRepository.DeleteDriversAsync(request.QuoteId, cancellationToken);
+
         foreach (var dto in request.Drivers)
         {
             quote.Drivers.Add(new Driver
@@ -42,7 +43,6 @@ public class SaveDriversCommandHandler : IRequestHandler<SaveDriversCommand, Res
         }
 
         quote.UpdatedAt = DateTime.UtcNow;
-        _quoteRepository.Update(quote);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

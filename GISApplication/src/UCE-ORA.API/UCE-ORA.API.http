@@ -1,0 +1,6 @@
+@UCE_ORA.API_HostAddress = http://localhost:5242
+
+GET {{UCE_ORA.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
