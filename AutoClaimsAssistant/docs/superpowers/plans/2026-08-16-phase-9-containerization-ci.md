@@ -1194,7 +1194,9 @@ git checkout main
 
 Done: PR #2 closed (not merged), remote and local `demo/ci-regression-eval-gate` branches deleted, `coverage_agent.py`'s weakened instructions never reached `main` (confirmed clean — the edit only ever existed on the deleted branch).
 
-- [ ] **Step 6: Update the roadmap — DEFERRED until Step 4 is actually achieved**
+- [ ] **Step 6: Update the roadmap — CONSCIOUSLY DEFERRED (2026-08-17), not an oversight**
+
+Decision made explicitly, not discovered later: Task 6's regression demonstration was attempted (see Step 4's execution note) and did not cleanly reproduce, at real Azure-call cost per attempt. Rather than keep re-rolling indefinitely, the decision was to proceed to Phase 10 with this gap open, and revisit Task 6 later — it does not block Phase 10 (Azure deployment), which depends on the containerized stack and CI pipeline from Tasks 1–5, both genuinely complete. **When resuming:** re-attempt Step 4 (possibly with a strengthened weakening edit, since the current one didn't reliably shift judged groundedness), then come back and do Steps 6–7 for real.
 
 In `docs/superpowers/plans/2026-08-10-roadmap.md`, check off Phase 9:
 
