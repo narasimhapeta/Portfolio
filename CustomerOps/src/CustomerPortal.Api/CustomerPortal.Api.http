@@ -1,9 +1,5 @@
 @CustomerPortal.Api_HostAddress = http://localhost:5197
 
-GET {{CustomerPortal.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
 ### List customers
 GET {{CustomerPortal.Api_HostAddress}}/api/v1/customers
 
