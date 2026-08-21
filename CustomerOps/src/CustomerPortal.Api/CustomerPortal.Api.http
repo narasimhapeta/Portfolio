@@ -4,3 +4,19 @@ GET {{CustomerPortal.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+### List customers
+GET {{CustomerPortal.Api_HostAddress}}/api/v1/customers
+
+### Create a customer
+POST {{CustomerPortal.Api_HostAddress}}/api/v1/customers
+Content-Type: application/json
+
+{
+  "firstName": "Ada",
+  "lastName": "Lovelace",
+  "email": "ada@example.com",
+  "phone": "555-0100"
+}
+
+### Search customers
+GET {{CustomerPortal.Api_HostAddress}}/api/v1/customers/search?query=Lovelace
