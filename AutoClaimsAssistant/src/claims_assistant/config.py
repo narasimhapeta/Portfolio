@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     azure_search_endpoint: str = ""
     azure_search_api_key: str = ""
     azure_search_index_name: str = "policy-documents"
+    azure_storage_connection_string: str = ""
+    azure_storage_container_name: str = "claim-documents"
     policy_db_mcp_url: str = "http://localhost:8101/mcp"
     claims_history_mcp_url: str = "http://localhost:8102/mcp"
     vin_vehicle_mcp_url: str = "http://localhost:8103/mcp"

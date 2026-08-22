@@ -336,6 +336,21 @@ wheels = [
 ]
 
 [[package]]
+name = "azure-storage-blob"
+version = "12.30.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-core" },
+    { name = "cryptography" },
+    { name = "isodate" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3b/48/84a820d898267f662b5c06f7cd76fdb8a9e272b44aa9376cef3ec0f6a294/azure_storage_blob-12.30.0.tar.gz", hash = "sha256:2cd74d4d5731e5eb6b8d5c5056ee115a5e88f8fdf22517b739836fda685018be", size = 618229, upload-time = "2026-06-08T11:45:35.575Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5e/0b/e106f0fd7fa785867d9ffcc47dc9e6237c0e58f51058473b777487a98edc/azure_storage_blob-12.30.0-py3-none-any.whl", hash = "sha256:d415ac50b67a8da6b3ae7e9f1014b1b55cd7aafa0b8d4ca9b380568dc7360423", size = 435610, upload-time = "2026-06-08T11:45:37.213Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -570,10 +585,12 @@ dependencies = [
     { name = "aiohttp" },
     { name = "asyncpg" },
     { name = "azure-search-documents" },
+    { name = "azure-storage-blob" },
     { name = "fastapi" },
     { name = "mcp", extra = ["cli"] },
     { name = "pandas" },
     { name = "pydantic-settings" },
+    { name = "python-multipart" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -595,10 +612,12 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.14.3" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "azure-search-documents", specifier = ">=12.0.0" },
+    { name = "azure-storage-blob", specifier = ">=12.24.0" },
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "mcp", extras = ["cli"], specifier = ">=2.0.0" },
     { name = "pandas", specifier = ">=3.0.5" },
     { name = "pydantic-settings", specifier = ">=2" },
+    { name = "python-multipart", specifier = ">=0.0.32" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.1" },
 ]

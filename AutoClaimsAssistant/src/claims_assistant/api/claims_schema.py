@@ -24,6 +24,8 @@ class ClaimResponse(BaseModel):
     recommendation: ClaimRecommendation | None = None
     clarification: ClarificationRequest | None = None
     error: str | None = None
+    document_urls: list[str] | None = None
+
 
 
 def claim_response_from_model(claim: Claim) -> ClaimResponse:
@@ -45,4 +47,6 @@ def claim_response_from_model(claim: Claim) -> ClaimResponse:
             else None
         ),
         error=claim.error_message,
+        document_urls=claim.document_urls,
+
     )

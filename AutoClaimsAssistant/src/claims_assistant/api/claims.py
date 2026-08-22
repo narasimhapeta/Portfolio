@@ -5,21 +5,27 @@ import uuid
 from typing import Annotated
 
 from agent_framework import Workflow
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from claims_assistant.agents.adjuster_summary_schema import ClaimRecommendation
 from claims_assistant.api.claims_schema import ClaimResponse, claim_response_from_model
 from claims_assistant.claims_repository import (
+    add_document_url,
     create_clarification_claim,
     create_completed_claim,
     create_failed_claim,
     get_claim_by_id,
 )
+from claims_assistant.config import Settings, get_settings
 from claims_assistant.database import get_db_session
+from claims_assistant.storage.blob import upload_claim_document
 from claims_assistant.workflow.graph import get_claim_intake_workflow
 from claims_assistant.workflow.messages import ClaimIntakeRequest
+
+SettingsDep = Annotated[Settings, Depends(get_settings)]
+
 
 router = APIRouter()
 
@@ -68,4 +74,20 @@ async def get_claim(claim_id: uuid.UUID, session: SessionDep) -> ClaimResponse:
     claim = await get_claim_by_id(session, claim_id)
     if claim is None:
         raise HTTPException(status_code=404, detail=f"claim {claim_id} not found")
+    return claim_response_from_model(claim)
+
+
+@router.post("/claims/{claim_id}/documents", response_model=ClaimResponse)
+async def upload_document(
+    claim_id: uuid.UUID, file: UploadFile, session: SessionDep, settings: SettingsDep
+) -> ClaimResponse:
+    claim = await get_claim_by_id(session, claim_id)
+    if claim is None:
+        raise HTTPException(status_code=404, detail=f"claim {claim_id} not found")
+    content = await file.read()
+    filename = file.filename or "document"
+    url = await upload_claim_document(
+        settings, claim_id, filename, content, file.content_type or "application/octet-stream"
+    )
+    claim = await add_document_url(session, claim, url)
     return claim_response_from_model(claim)

@@ -8,11 +8,12 @@ from httpx import ASGITransport, AsyncClient
 
 from claims_assistant.agents.adjuster_summary_schema import ClaimRecommendation
 from claims_assistant.agents.extraction_schema import FieldConfidence, FNOLExtraction
-from claims_assistant.database import create_all_tables
+from claims_assistant.claims_repository import create_failed_claim
+from claims_assistant.database import create_all_tables, get_session_factory
 from claims_assistant.fnol_schema import FNOLFacts, Party, VehicleInfo
 from claims_assistant.main import create_app
 from claims_assistant.workflow.graph import get_claim_intake_workflow
-from claims_assistant.workflow.messages import ClarificationRequest
+from claims_assistant.workflow.messages import ClaimIntakeRequest, ClarificationRequest
 
 pytestmark = pytest.mark.integration
 
@@ -215,3 +216,31 @@ async def test_post_claims_routes_low_confidence_extraction_to_clarification_via
     assert body["status"] == "needs_clarification"
     assert body["recommendation"] is None
     assert body["clarification"]["reason"]
+
+@pytest.mark.asyncio
+async def test_upload_document_appends_url_to_claim(seeded_db):
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        claim = await create_failed_claim(
+            session,
+            ClaimIntakeRequest(
+                policy_number="POL-CA-0003",
+                vin="1C4RJFBG5FC123458",
+                narrative_text="test claim for upload test",
+            ),
+            "test setup - not a real pipeline failure",
+        )
+        claim_id = claim.id
+
+    app = create_app()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        upload_response = await client.post(
+            f"/claims/{claim_id}/documents",
+            files={"file": ("damage.jpg", b"fake-jpeg-bytes", "image/jpeg")},
+        )
+
+    assert upload_response.status_code == 200
+    body = upload_response.json()
+    assert body["document_urls"] is not None
+    assert len(body["document_urls"]) == 1
+    assert body["document_urls"][0].endswith("damage.jpg")

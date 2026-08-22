@@ -84,3 +84,5 @@ class Claim(Base):
     recommendation: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     clarification: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error_message: Mapped[str | None] = mapped_column()
+    document_urls: Mapped[list[str] | None] = mapped_column(JSONB)
+

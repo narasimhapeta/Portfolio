@@ -57,3 +57,8 @@ async def create_failed_claim(
 
 async def get_claim_by_id(session: AsyncSession, claim_id: uuid.UUID) -> Claim | None:
     return await session.get(Claim, claim_id)
+
+async def add_document_url(session: AsyncSession, claim: Claim, url: str) -> Claim:
+    claim.document_urls = [*(claim.document_urls or []), url]
+    await session.commit()
+    return claim
