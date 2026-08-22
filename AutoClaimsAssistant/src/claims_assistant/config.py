@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     postgres_db: str = "claims_assistant"
     postgres_user: str = "claims_assistant"
     postgres_password: str = "devpassword"
+    postgres_ssl_mode: str = "disable"
     azure_openai_endpoint: str = ""
     azure_openai_api_key: str = ""
     azure_openai_chat_deployment: str = ""

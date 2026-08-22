@@ -32,7 +32,7 @@ def test_settings_reads_from_env(monkeypatch):
     monkeypatch.setenv("POLICY_DB_MCP_URL", "http://policy-db-test:8101/mcp")
     monkeypatch.setenv("CLAIMS_HISTORY_MCP_URL", "http://claims-history-test:8102/mcp")
     monkeypatch.setenv("VIN_VEHICLE_MCP_URL", "http://vin-vehicle-test:8103/mcp")
-
+    monkeypatch.setenv("POSTGRES_SSL_MODE", "require")
 
     settings = Settings()
 
@@ -65,6 +65,7 @@ def test_settings_reads_from_env(monkeypatch):
     assert settings.policy_db_mcp_url == "http://policy-db-test:8101/mcp"
     assert settings.claims_history_mcp_url == "http://claims-history-test:8102/mcp"
     assert settings.vin_vehicle_mcp_url == "http://vin-vehicle-test:8103/mcp"
+    assert settings.postgres_ssl_mode == "require"
 
 
 

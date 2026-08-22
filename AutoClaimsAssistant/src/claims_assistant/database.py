@@ -18,8 +18,12 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None
 def get_engine() -> AsyncEngine:
     global _engine
     if _engine is None:
-        _engine = create_async_engine(get_settings().postgres_async_dsn)
+        settings = get_settings()
+        _engine = create_async_engine(
+            settings.postgres_async_dsn, connect_args={"ssl": settings.postgres_ssl_mode}
+        )
     return _engine
+
 
 
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
