@@ -1,5 +1,7 @@
 # tests/test_config.py
 
+from sqlalchemy.engine import make_url
+
 from claims_assistant.config import Settings, get_settings
 
 
@@ -67,6 +69,19 @@ def test_settings_reads_from_env(monkeypatch):
     assert settings.vin_vehicle_mcp_url == "http://vin-vehicle-test:8103/mcp"
     assert settings.postgres_ssl_mode == "require"
 
+def test_postgres_dsn_url_encodes_special_characters_in_password(monkeypatch):
+    monkeypatch.setenv("POSTGRES_HOST", "db.example")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DB", "testdb")
+    monkeypatch.setenv("POSTGRES_USER", "testuser")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "p@ss:word/with#special?chars")
+
+    settings = Settings()
+
+    url = make_url(settings.postgres_async_dsn)
+    assert url.host == "db.example"
+    assert url.username == "testuser"
+    assert url.password == "p@ss:word/with#special?chars"
 
 
 def test_get_settings_is_cached():
