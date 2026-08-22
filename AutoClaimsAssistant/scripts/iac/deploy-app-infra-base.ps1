@@ -31,5 +31,9 @@ $env:POSTGRES_USER = "claimsadmin"
 $env:POSTGRES_PASSWORD = $postgresPasswordPlain
 $env:POSTGRES_SSL_MODE = "require"
 uv run python scripts/seed_db.py
+if ($LASTEXITCODE -ne 0) {
+    throw "Seeding failed (exit code $LASTEXITCODE) -- check the error above before proceeding to deploy-app-infra-apps.ps1"
+}
+
 
 Write-Host "Base infra deployed and seeded. Save the Postgres password -- deploy-app-infra-apps.ps1 needs it again."
