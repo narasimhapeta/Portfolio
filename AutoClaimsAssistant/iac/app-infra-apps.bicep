@@ -1,9 +1,3 @@
-// iac/app-infra-apps.bicep
-// The 4 container apps. Deployed separately from app-infra-base.bicep because
-// `image` must reference something that already exists in ACR -- run this only
-// after app-infra-base.bicep has created the registry AND an image has been
-// pushed to it (deploy-app-infra-apps.ps1 does both in the right order).
-
 @description('Region for all resources in this template')
 param location string = resourceGroup().location
 
@@ -38,11 +32,38 @@ resource containerAppsEnv 'Microsoft.App/managedEnvironments@2026-03-02-preview'
   name: 'claims-assistant-env'
 }
 
+// A single user-assigned identity shared by all 4 container apps for ACR pull.
+// NOT system-assigned: a system-assigned identity's principalId only exists once
+// the container app itself is created, so an AcrPull role assignment referencing
+// it would depend ON the container app -- but the container app's first revision
+// needs to pull its image (and thus needs the role already granted) before ARM
+// considers it successfully provisioned. That circular dependency is a documented
+// Azure Container Apps + Bicep limitation (fails with "Operation expired").
+// A user-assigned identity's principalId is known immediately on creation, so the
+// role assignment can be granted BEFORE any container app exists -- no cycle.
+resource acrPullIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2025-05-31-PREVIEW' = {
+  name: 'claims-assistant-acr-pull-identity'
+  location: location
+}
+
+resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(acr.id, acrPullIdentity.id, acrPullRoleId)
+  scope: acr
+  properties: {
+    roleDefinitionId: acrPullRoleId
+    principalId: acrPullIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource policyDbMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
   name: 'policy-db-mcp'
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
   }
   properties: {
     environmentId: containerAppsEnv.id
@@ -52,7 +73,7 @@ resource policyDbMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
         targetPort: 8101
       }
       registries: [
-        { server: acrLoginServer, identity: 'system' }
+        { server: acrLoginServer, identity: acrPullIdentity.id }
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
@@ -78,23 +99,19 @@ resource policyDbMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       scale: { minReplicas: 0, maxReplicas: 2 }
     }
   }
-}
-
-resource policyDbMcpAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, policyDbMcp.id, acrPullRoleId)
-  scope: acr
-  properties: {
-    roleDefinitionId: acrPullRoleId
-    principalId: policyDbMcp.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 resource claimsHistoryMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
   name: 'claims-history-mcp'
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
   }
   properties: {
     environmentId: containerAppsEnv.id
@@ -104,7 +121,7 @@ resource claimsHistoryMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
         targetPort: 8102
       }
       registries: [
-        { server: acrLoginServer, identity: 'system' }
+        { server: acrLoginServer, identity: acrPullIdentity.id }
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
@@ -130,23 +147,19 @@ resource claimsHistoryMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       scale: { minReplicas: 0, maxReplicas: 2 }
     }
   }
-}
-
-resource claimsHistoryMcpAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, claimsHistoryMcp.id, acrPullRoleId)
-  scope: acr
-  properties: {
-    roleDefinitionId: acrPullRoleId
-    principalId: claimsHistoryMcp.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 resource vinVehicleMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
   name: 'vin-vehicle-mcp'
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
   }
   properties: {
     environmentId: containerAppsEnv.id
@@ -156,7 +169,7 @@ resource vinVehicleMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
         targetPort: 8103
       }
       registries: [
-        { server: acrLoginServer, identity: 'system' }
+        { server: acrLoginServer, identity: acrPullIdentity.id }
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
@@ -182,23 +195,19 @@ resource vinVehicleMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       scale: { minReplicas: 0, maxReplicas: 2 }
     }
   }
-}
-
-resource vinVehicleMcpAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, vinVehicleMcp.id, acrPullRoleId)
-  scope: acr
-  properties: {
-    roleDefinitionId: acrPullRoleId
-    principalId: vinVehicleMcp.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
   name: 'claims-assistant-api'
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
   }
   properties: {
     environmentId: containerAppsEnv.id
@@ -209,7 +218,7 @@ resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
         targetPort: 8000
       }
       registries: [
-        { server: acrLoginServer, identity: 'system' }
+        { server: acrLoginServer, identity: acrPullIdentity.id }
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
@@ -251,16 +260,9 @@ resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
       scale: { minReplicas: 0, maxReplicas: 3 }
     }
   }
-}
-
-resource apiAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, api.id, acrPullRoleId)
-  scope: acr
-  properties: {
-    roleDefinitionId: acrPullRoleId
-    principalId: api.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 output apiFqdn string = api.properties.configuration.ingress.fqdn
