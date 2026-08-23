@@ -1,0 +1,72 @@
+# .github/workflows/auto-claims-assistant-cd.yml
+name: AutoClaimsAssistant CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "AutoClaimsAssistant/**"
+      - ".github/workflows/auto-claims-assistant-cd.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.sha.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: sha
+        run: echo "tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - run: az acr login --name claimsassistantacr
+      - run: docker build -t claimsassistantacr.azurecr.io/claims-assistant:${{ steps.sha.outputs.tag }} AutoClaimsAssistant
+      - run: docker push claimsassistantacr.azurecr.io/claims-assistant:${{ steps.sha.outputs.tag }}
+
+  deploy-canary:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - run: |
+          az containerapp update \
+            --name claims-assistant-api \
+            --resource-group claims-assistant-rg \
+            --image claimsassistantacr.azurecr.io/claims-assistant:${{ needs.build-and-push.outputs.image-tag }} \
+            --revision-suffix ${{ needs.build-and-push.outputs.image-tag }}
+      - run: |
+          NEW_REVISION="claims-assistant-api--${{ needs.build-and-push.outputs.image-tag }}"
+          OLD_REVISION=$(az containerapp revision list \
+            --name claims-assistant-api --resource-group claims-assistant-rg \
+            --query "[?properties.active && name!='$NEW_REVISION'].name | [0]" -o tsv)
+          if [ -z "$OLD_REVISION" ]; then
+            echo "No prior active revision found — first deploy, sending 100% traffic to $NEW_REVISION"
+            az containerapp ingress traffic set --name claims-assistant-api --resource-group claims-assistant-rg --revision-weight "$NEW_REVISION=100"
+          else
+            az containerapp ingress traffic set --name claims-assistant-api --resource-group claims-assistant-rg --revision-weight "$NEW_REVISION=10" "$OLD_REVISION=90"
+          fi
+
+  promote:
+    needs: deploy-canary
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - run: |
+          NEW_REVISION="claims-assistant-api--${{ needs.build-and-push.outputs.image-tag }}"
+          az containerapp ingress traffic set --name claims-assistant-api --resource-group claims-assistant-rg --revision-weight "$NEW_REVISION=100"
