@@ -485,11 +485,38 @@ resource containerAppsEnv 'Microsoft.App/managedEnvironments@2026-03-02-preview'
   name: 'claims-assistant-env'
 }
 
+// A single user-assigned identity shared by all 4 container apps for ACR pull.
+// NOT system-assigned: a system-assigned identity's principalId only exists once
+// the container app itself is created, so an AcrPull role assignment referencing
+// it would depend ON the container app -- but the container app's first revision
+// needs to pull its image (and thus needs the role already granted) before ARM
+// considers it successfully provisioned. That circular dependency is a documented
+// Azure Container Apps + Bicep limitation (fails with "Operation expired").
+// A user-assigned identity's principalId is known immediately on creation, so the
+// role assignment can be granted BEFORE any container app exists -- no cycle.
+resource acrPullIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2025-05-31-PREVIEW' = {
+  name: 'claims-assistant-acr-pull-identity'
+  location: location
+}
+
+resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(acr.id, acrPullIdentity.id, acrPullRoleId)
+  scope: acr
+  properties: {
+    roleDefinitionId: acrPullRoleId
+    principalId: acrPullIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource policyDbMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
   name: 'policy-db-mcp'
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
   }
   properties: {
     environmentId: containerAppsEnv.id
@@ -499,7 +526,7 @@ resource policyDbMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
         targetPort: 8101
       }
       registries: [
-        { server: acrLoginServer, identity: 'system' }
+        { server: acrLoginServer, identity: acrPullIdentity.id }
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
@@ -525,23 +552,19 @@ resource policyDbMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       scale: { minReplicas: 0, maxReplicas: 2 }
     }
   }
-}
-
-resource policyDbMcpAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, policyDbMcp.id, acrPullRoleId)
-  scope: acr
-  properties: {
-    roleDefinitionId: acrPullRoleId
-    principalId: policyDbMcp.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 resource claimsHistoryMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
   name: 'claims-history-mcp'
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
   }
   properties: {
     environmentId: containerAppsEnv.id
@@ -551,7 +574,7 @@ resource claimsHistoryMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
         targetPort: 8102
       }
       registries: [
-        { server: acrLoginServer, identity: 'system' }
+        { server: acrLoginServer, identity: acrPullIdentity.id }
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
@@ -577,23 +600,19 @@ resource claimsHistoryMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       scale: { minReplicas: 0, maxReplicas: 2 }
     }
   }
-}
-
-resource claimsHistoryMcpAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, claimsHistoryMcp.id, acrPullRoleId)
-  scope: acr
-  properties: {
-    roleDefinitionId: acrPullRoleId
-    principalId: claimsHistoryMcp.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 resource vinVehicleMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
   name: 'vin-vehicle-mcp'
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
   }
   properties: {
     environmentId: containerAppsEnv.id
@@ -603,7 +622,7 @@ resource vinVehicleMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
         targetPort: 8103
       }
       registries: [
-        { server: acrLoginServer, identity: 'system' }
+        { server: acrLoginServer, identity: acrPullIdentity.id }
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
@@ -629,23 +648,19 @@ resource vinVehicleMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       scale: { minReplicas: 0, maxReplicas: 2 }
     }
   }
-}
-
-resource vinVehicleMcpAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, vinVehicleMcp.id, acrPullRoleId)
-  scope: acr
-  properties: {
-    roleDefinitionId: acrPullRoleId
-    principalId: vinVehicleMcp.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
   name: 'claims-assistant-api'
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
   }
   properties: {
     environmentId: containerAppsEnv.id
@@ -656,7 +671,7 @@ resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
         targetPort: 8000
       }
       registries: [
-        { server: acrLoginServer, identity: 'system' }
+        { server: acrLoginServer, identity: acrPullIdentity.id }
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
@@ -698,20 +713,19 @@ resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
       scale: { minReplicas: 0, maxReplicas: 3 }
     }
   }
-}
-
-resource apiAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, api.id, acrPullRoleId)
-  scope: acr
-  properties: {
-    roleDefinitionId: acrPullRoleId
-    principalId: api.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 output apiFqdn string = api.properties.configuration.ingress.fqdn
 ```
+
+**Execution note (found and fixed during real Task 7 execution — this is a substantial, load-bearing change from the version validated during planning):** the original version above gave each of the 4 container apps its own `SystemAssigned` identity, with a per-app `AcrPull` role assignment referencing `<containerApp>.identity.principalId`. That validated cleanly (`az deployment group validate` doesn't catch this), but **failed on real deployment**, all 4 container apps identically, with `ContainerAppOperationError: Failed to provision revision... Operation expired`. Root cause, confirmed against real state and matched to a documented Azure Container Apps + Bicep limitation (Microsoft Q&A/GitHub issue #836): a system-assigned identity's `principalId` only exists once the container app itself is created, so the role assignment referencing it necessarily depends ON the container app — but the container app's first revision needs to pull its image (requiring the role to already be granted) before ARM considers it successfully provisioned. Circular, unresolvable in one flat deployment. Confirmed directly: `az role assignment list --resource-group claims-assistant-rg` showed zero `AcrPull` assignments after the failed run — they were never created, exactly as the circular dependency predicts.
+
+**Fix:** replaced the 4 system-assigned identities + 4 per-app role assignments with **one shared user-assigned identity** (`claims-assistant-acr-pull-identity`) and **one role assignment**, both created before any container app (a user-assigned identity's `principalId` is known immediately, breaking the cycle). Each container app references it via `identity: { type: 'UserAssigned', userAssignedIdentities: {...} } }` and `registries[].identity: acrPullIdentity.id`, with an explicit `dependsOn: [acrPullRoleAssignment]`.
+
+**Second issue hit even after that fix, on the very next real attempt:** 2 of 4 container apps still failed with the identical "Operation expired" error, while the other 2 succeeded — a genuine RBAC **propagation delay**, not the circular dependency (which the user-assigned identity fix did resolve — confirmed by the failure becoming partial/inconsistent instead of uniform across all 4). Azure role assignments are eventually consistent; even though the assignment is now correctly sequenced to exist before the container apps, the permission can take up to a couple of minutes to actually take effect everywhere, and ARM doesn't insert a wait. Fix: simply **retry the same `az deployment group create` command** — it's idempotent, the 2 already-succeeded apps are no-ops, and by the retry more real time had passed for the role to propagate, and the second attempt succeeded fully. If this recurs unreliably in the future, the deterministic fix would be splitting the identity+role-assignment into its own deployment step with a deliberate wait before deploying the container apps — not needed so far.
 
 - [ ] **Step 3: Lint-check both files locally**
 
@@ -1543,16 +1557,45 @@ git push
 
 - [ ] `iac/platform.bicep` exists, was decompiled from the live OpenAI + Search resources (not hand-written), validates clean, and was deployed for real (Task 1) — the disaster-recovery path this template exists for was actually exercised, not just claimed.
 - [ ] The policy corpus was re-indexed (`tests/test_indexer.py`, 63 chunks) and the two GitHub secrets that regenerate on a platform redeploy (`AZURE_OPENAI_API_KEY`, `AZURE_SEARCH_API_KEY`) were updated.
-- [ ] `iac/app-infra-base.bicep` and `iac/app-infra-apps.bicep` exist, both validated clean against real ARM during planning (`az deployment group validate`, zero errors) before being written into this document.
-- [ ] `scripts/iac/deploy-app-infra-base.ps1`, `deploy-app-infra-apps.ps1`, and `teardown-app-infra.ps1` exist and were each run for real at least once (Tasks 4, 7, 9).
-- [ ] `Settings.postgres_ssl_mode` exists and is threaded through both `database.py` and `db.py`.
-- [ ] `POST /claims/{claim_id}/documents` exists, uploads to Azure Blob Storage, and persists the URL on `Claim.document_urls` — verified via a real integration test and a real Swagger call.
-- [ ] A GitHub OIDC app registration exists with two federated credentials and role assignments scoped to ACR push + Container Apps Contributor on `claims-assistant-rg` only.
-- [ ] `.github/workflows/auto-claims-assistant-cd.yml` triggers on push to `main` and was observed to: build+push, deploy a canary revision receiving partial traffic, pause for manual approval, then promote to 100%.
-- [ ] **The full app-infra layer was torn down and redeployed from the Bicep templates + scripts alone, and served a real request afterward** (Task 9, Steps 5-6) — this is the capability the revision exists to prove, not just claim.
-- [ ] `claims-assistant-openai` and `claims-assistant-search` were confirmed untouched by the teardown (Task 9, Step 5's resource list check).
-- [ ] `uv run ruff check .` and `uv run mypy src` both pass clean.
-- [ ] Roadmap doc's Phase 10 checkbox is checked off.
-- [ ] Everything above is committed and pushed.
+- [x] `iac/app-infra-base.bicep` and `iac/app-infra-apps.bicep` exist. `app-infra-base.bicep` matches its planning-time validation exactly; `app-infra-apps.bicep` was substantially revised during real execution (system-assigned → shared user-assigned identity for ACR pull — see Lessons Learned) and the corrected version has now been deployed successfully for real, twice.
+- [x] `scripts/iac/teardown-app-infra.ps1` has been run for real once (mid-session, to reset to a clean slate). `deploy-app-infra-base.ps1` has been run for real twice (both times completed, including seeding). **`deploy-app-infra-apps.ps1` has not actually been run as a script** — its underlying `az deployment group create` command was run manually instead, since the script's automatic `az cognitiveservices account show` lookup would fail while `claims-assistant-openai` doesn't exist yet. Revisit the script once Task 1 is unblocked, either to confirm it works as-is once OpenAI is real, or to make it tolerate a missing OpenAI account gracefully.
+- [x] `Settings.postgres_ssl_mode` exists and is threaded through both `database.py` and `db.py`.
+- [x] `POST /claims/{claim_id}/documents` exists, uploads to Azure Blob Storage, and persists the URL on `Claim.document_urls` — verified via a real integration test (against real Azure Blob Storage). Swagger/manual HTTP verification not yet done — `POST /claims` (needed to get a claim to attach a document to via the API rather than the repository directly) still needs real OpenAI, which is blocked.
+- [x] A GitHub OIDC app registration exists with two federated credentials and role assignments scoped to ACR push + Container Apps Contributor on `claims-assistant-rg` only. Real CD run confirmed both credentials work (branch-scoped for `build-and-push`/`deploy-canary`, environment-scoped for `promote`).
+- [x] `.github/workflows/auto-claims-assistant-cd.yml` triggers on push to `main` and was observed, for real, to: build+push, update the container app, pause for manual approval (`production` GitHub Environment, confirmed via `gh api .../environments/production` showing a real `required_reviewers` rule), and promote after approval. **Not yet observed: an actual partial-traffic canary split** — the only real deploy so far was the *first* one, which the workflow's own logic sends straight to 100% (no prior revision to split against). A second deploy is needed to see the 90/10 split for real; deferred by the project owner ("move on") rather than done.
+- [ ] **The full app-infra layer was torn down and redeployed from the Bicep templates + scripts alone, and served a real request afterward** (Task 9, Steps 5-6) — **not done this session**, deferred to the next one. This is the capability the revision exists to prove, so it remains the single most important open item.
+- [x] `claims-assistant-openai` and `claims-assistant-search` confirmed untouched by the one teardown that did happen mid-session (`az resource list` showed only the two platform resources missing entirely — because they were never successfully created in the first place, not because teardown spared them; the "spared" behavior itself hasn't been observed with them actually present).
+- [x] `uv run ruff check .` and `uv run mypy src` both passed clean after every code-touching task (3, 5).
+- [ ] Roadmap doc's Phase 10 checkbox is **not** checked off yet — genuinely not done: Task 1 (platform deploy) is blocked externally on the Azure fraud-flag support ticket, and Task 9's teardown/redeploy proof is deferred.
+- [x] Everything committed and pushed as of this session's stopping point, including the plan doc itself and every fix described in Lessons Learned below.
 
-This is the roadmap's final phase — once done, all 11 phases (0-10) are complete.
+This is the roadmap's final phase. Resume next session at: Task 1 (retry `platform.bicep` deploy — check the support ticket first) and Task 9's teardown/redeploy demonstration.
+
+## Lessons Learned (2026-08-22 – 2026-08-23 execution session)
+
+This phase's execution surfaced far more real, load-bearing bugs than any prior phase — worth a consolidated record, since several of them are exactly the kind of thing that would come up in an interview about this project's "productionizing" story: not just "I deployed to Azure" but "here's what actually breaks when you do, and why."
+
+### Real bugs found in application code (not infra)
+
+1. **Postgres DSN construction broke on a password containing `@`.** `config.py`'s `postgres_dsn`/`postgres_async_dsn` built connection strings via raw f-string interpolation (`f"postgresql://{user}:{password}@{host}:{port}/{db}"`). A password like `Admin@1234` produces a string with *two* `@` characters; `sqlalchemy.engine.make_url()` split on the *first* one, producing a garbage hostname (`1234@claims-assistant-pg.postgres.database.azure.com`) and silently truncating the password to `Admin`. This surfaced as `socket.gaierror` / `getaddrinfo failed` — a DNS resolution error that had nothing to do with DNS. **This cost the most debugging time in the whole session**: a real, multi-hour detour first suspected a Windows-asyncio-thread-pool DNS quirk (plain synchronous `socket.getaddrinfo()` calls with identical parameters succeeded every time, but the same call inside asyncio's executor failed — a genuinely reproducible, confusing signal that pointed the wrong way), then suspected Docker Desktop's embedded DNS resolver when the same symptom reproduced inside a Linux container. The actual fix (`urllib.parse.quote(value, safe="")` on both `postgres_user` and `postgres_password` before interpolating) was only found by testing the *exact* failing DSN string through `make_url()` directly and reading its output — not by reasoning about networking at all. **Lesson: when an error message is confidently specific ("DNS resolution failed") but a change of runtime/OS doesn't change the symptom, question whether the layer producing the error message is even the layer with the actual bug** — here, the error surfaced deep in asyncpg/asyncio, but the defect was in URL string construction two layers up.
+2. **`add_document_url`'s `session.begin()` conflicted with SQLAlchemy's autobegin.** The `upload_document` endpoint calls `get_claim_by_id` (a `session.get(...)` call) before `add_document_url` — and any query on a `Session`/`AsyncSession` triggers autobegin, silently starting a transaction. `add_document_url`'s `async with session.begin():` (copied from `create_completed_claim`'s pattern, which is always the *first* thing to touch its session) then failed with `InvalidRequestError: A transaction is already begun on this Session`. Fix: don't re-begin — mutate the already-tracked object and call `session.commit()` directly. **Lesson: a repository-layer helper pattern that works for one call site isn't automatically safe for another — the assumption "this session is fresh" needs checking per call site, not copy-pasted.**
+3. **Schema drift with no migration tool.** `create_all_tables()`'s `Base.metadata.create_all()` only creates missing tables; it never alters existing ones. Adding `document_urls` to the `Claim` model did nothing to the `claims` table already sitting in Azure Postgres from an earlier seeding run. Every prior phase (0-9) happened to always run against a genuinely fresh database, so this had never come up. Fix here was a manual `DROP TABLE claims` (safe — it only ever held pipeline results, not seed data) and letting `create_all_tables()` recreate it. **This is a real, durable gap in the project, not just a one-off annoyance** — worth flagging as a known limitation if this project's schema evolves further: either adopt Alembic, or keep accepting manual drops as the "migration strategy" for a demo project.
+
+### Real bugs found in the Bicep/infra design
+
+4. **Circular dependency: system-assigned identity + same-deployment `AcrPull` role assignment.** Each container app's `AcrPull` role assignment referenced `<containerApp>.identity.principalId` — but a system-assigned identity's `principalId` only exists once the container app itself is created, and the container app's first revision needs to *already* have pull permission to be considered successfully provisioned. All 4 container apps failed identically with `Operation expired` on the first real deploy attempt. This is a **documented Azure Container Apps + Bicep limitation** (confirmed via Microsoft Q&A and `microsoft/azure-container-apps` GitHub issue #836) — not something `az deployment group validate` catches, since it's a runtime provisioning-order problem, not a schema error. Fix: one shared **user-assigned** identity, created (and granted the role) before any container app exists, referenced by all 4 via `identity.type: 'UserAssigned'`. **Lesson: `az deployment group validate` proves your template is well-formed ARM, not that the resources will actually provision successfully — some failure modes only exist at real-deployment time, especially around identity/RBAC timing.**
+5. **RBAC propagation delay, even after fixing #4.** The very next real attempt still failed 2-of-4 container apps identically (`Operation expired`) — but the *other* 2 succeeded, which is the tell that the circular dependency was actually gone (a real circular dependency fails uniformly; this was inconsistent). Azure role assignments are eventually consistent; the permission can take up to a couple of minutes to actually take effect even once correctly sequenced. Fix: just retry the same (idempotent) deployment command — enough real time had passed for propagation to catch up, and it fully succeeded. **Lesson: distinguish "wrong dependency order" (deterministic, same failure every time) from "right order but propagation lag" (intermittent/partial failure) before reaching for a bigger fix** — the second one often just needs a retry or a deliberate wait, not a redesign.
+6. **GitHub Actions job outputs are not transitive across a `needs:` chain.** `promote` had `needs: deploy-canary` (correct, since it must run after it) but tried to read `needs.build-and-push.outputs.image-tag` — which resolves to empty, because a job can only see outputs from jobs it *directly* lists in its own `needs:`, regardless of what its dependencies themselves depend on. Fix: `needs: [deploy-canary, build-and-push]`. **This is a well-known GitHub Actions gotcha, easy to write correctly-looking YAML that's subtly wrong** — worth remembering for any future multi-stage workflow with output passing.
+
+### Environment/tooling gotchas (not bugs in our code, but cost real time)
+
+7. **Azure OpenAI real-time fraud protection (RTFP), error `715-123420`.** Deleting and recreating the same Azure OpenAI resource triggered an account-level fraud flag that blocks resource creation entirely, confirmed via research to be evaluated at the subscription/account level (a fresh resource group did *not* help, per a matching report from someone else who hit the identical error). No config change, retry, or region switch lifts it — only a support ticket reviewed by Azure's account-protection team does, and that requires the **Portal UI**, not the CLI (`az support in-subscription tickets create` requires a paid support plan; Billing-category tickets are free only through the Portal). Still unresolved as of this session's end — genuinely external, not something to keep re-attempting.
+8. **PowerShell mangles embedded double-quotes when passing JSON strings to native executables.** `az ad app federated-credential create --parameters '{"name":"..."}'` had its quotes stripped by PowerShell before `az.exe` ever saw them. Fix: write the JSON to a file with `Out-File` (pure PowerShell string handling, no native-exe argument marshaling involved) and pass `--parameters @filename.json` instead. **A generically useful pattern for any future PowerShell + CLI-tool-expecting-JSON situation.**
+9. **PowerShell session variables silently going stale across a long session.** `$sha`, `$storageConn`, and `$app.appId` (used to set `AZURE_CLIENT_ID`) all caused real failures when their values turned out to be empty or from an old commit — either because a new terminal window was opened, or because enough time/commands had passed that the "obvious" assumption ("that variable is still set correctly") silently stopped holding. Each time, the fix was cheap (re-fetch fresh), but each also cost a full debug cycle to notice. **Lesson for any long guided session using shell variables as informal state: when a value that "should" be set produces a confusing downstream error (empty image tag, empty secret, empty container app parameter), check the variable's actual current value before debugging the consumer of that value.**
+10. **My own copy-paste bug while rewriting `app-infra-apps.bicep`:** moved `activeRevisionsMode` out of the `configuration` block on the `api` resource, making it an invalid sibling property. Caught immediately by `az deployment group validate` (`ContainerAppInvalidSchema`) before it ever reached a real deployment attempt — the cheap validation step did its job here, unlike issue #4 which validation couldn't catch.
+
+### What worked well, worth repeating
+
+- **Validating every Bicep change against real ARM (`az deployment group validate`) before handing it to the user**, even when the change felt small — caught the `activeRevisionsMode` typo for free, at zero cost, before it could cost a real deployment cycle.
+- **Reproducing a failing call with a synchronous, minimal, single-purpose script** (plain `socket.getaddrinfo()`, plain `asyncpg.connect()` bypassing SQLAlchemy, `make_url()` on the literal failing DSN string) was what actually found both the DSN bug and confirmed the identity/RBAC fix's real cause — narrowing to the smallest reproduction consistently beat reasoning about the failure in the abstract.
+- **Treating a task's own "don't do X" instruction as revisable, not sacred, once real execution proves the premise wrong** — Task 1 originally said "never redeploy `platform.bicep`, it's disaster-recovery only"; the subscription wipe made that premise false, and the plan was rewritten (not just worked around) to reflect the new reality.
