@@ -58,7 +58,7 @@ jobs:
           fi
 
   promote:
-    needs: deploy-canary
+    needs: [deploy-canary, build-and-push]
     runs-on: ubuntu-latest
     environment: production
     steps:
