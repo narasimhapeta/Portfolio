@@ -23,6 +23,10 @@ az storage account delete --name claimsassistantstorage --resource-group claims-
 Write-Host "Deleting ACR..."
 az acr delete --name claimsassistantacr --resource-group claims-assistant-rg --yes
 
+Write-Host "Deleting ACR-pull managed identity..."
+az identity delete --name claims-assistant-acr-pull-identity --resource-group claims-assistant-rg
+
+
 Write-Host "Deleting Log Analytics workspace..."
 # --force is required: without it the workspace is soft-deleted and its name stays
 # reserved for 14 days, which would break the next deploy-app-infra-base.ps1 run
