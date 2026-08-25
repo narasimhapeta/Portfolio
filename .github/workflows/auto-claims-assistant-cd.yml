@@ -2,11 +2,10 @@
 name: AutoClaimsAssistant CD
 
 on:
-  push:
+  workflow_run:
+    workflows: ["AutoClaimsAssistant CI"]
+    types: [completed]
     branches: [main]
-    paths:
-      - "AutoClaimsAssistant/**"
-      - ".github/workflows/auto-claims-assistant-cd.yml"
 
 permissions:
   id-token: write
@@ -15,10 +14,13 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
     outputs:
       image-tag: ${{ steps.sha.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - id: sha
         run: echo "tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
       - uses: azure/login@v2
