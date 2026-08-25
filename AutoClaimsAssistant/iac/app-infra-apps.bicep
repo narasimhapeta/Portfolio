@@ -245,6 +245,7 @@ resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
             { name: 'AZURE_OPENAI_ENDPOINT', value: azureOpenAiEndpoint }
             { name: 'AZURE_OPENAI_API_KEY', secretRef: 'azure-openai-key' }
             { name: 'AZURE_OPENAI_API_VERSION', value: azureOpenAiApiVersion }
+            { name: 'AZURE_OPENAI_CHAT_DEPLOYMENT', value: 'extraction-agent' }
             { name: 'AZURE_OPENAI_COVERAGE_DEPLOYMENT', value: 'coverage-agent' }
             { name: 'AZURE_OPENAI_EMBEDDING_DEPLOYMENT', value: 'policy-embeddings' }
             { name: 'AZURE_OPENAI_FRAUD_DEPLOYMENT', value: 'fraud-risk-agent' }
