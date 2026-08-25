@@ -18,6 +18,10 @@ param postgresAdminPassword string
 @description('Your current public IPv4 address, for local seeding access to Postgres')
 param localSeedIpAddress string
 
+@description('Service principal object ID of the GitHub Actions OIDC identity (az ad sp show --id <appId> --query id -o tsv) - granted AcrPush on this ACR so CD survives an app-infra teardown/redeploy')
+param githubActionsSpObjectId string
+
+
 resource acr 'Microsoft.ContainerRegistry/registries@2026-03-01-preview' = {
   name: 'claimsassistantacr'
   location: location
@@ -28,6 +32,17 @@ resource acr 'Microsoft.ContainerRegistry/registries@2026-03-01-preview' = {
     adminUserEnabled: false
   }
 }
+
+resource acrPushRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(acr.id, githubActionsSpObjectId, 'AcrPush')
+  scope: acr
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8311e382-0749-4cb8-b61a-304f252e45ec')
+    principalId: githubActionsSpObjectId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2026-03-01' = {
   name: 'claims-assistant-logs'

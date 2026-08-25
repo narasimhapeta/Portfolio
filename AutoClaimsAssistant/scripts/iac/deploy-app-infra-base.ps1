@@ -5,6 +5,9 @@
 
 $ErrorActionPreference = "Stop"
 
+$githubActionsSpObjectId = az ad sp show --id (az ad app list --display-name "github-actions-autoclaims-assistant" --query "[0].appId" -o tsv) --query id -o tsv
+
+
 $myIp = (Invoke-RestMethod -Uri "https://api.ipify.org?format=text" -Headers @{ "User-Agent" = "curl" })
 Write-Host "Detected IPv4: $myIp"
 
@@ -16,7 +19,7 @@ $postgresPasswordPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringAu
 $deployment = az deployment group create `
     --resource-group claims-assistant-rg `
     --template-file iac/app-infra-base.bicep `
-    --parameters postgresAdminPassword=$postgresPasswordPlain localSeedIpAddress=$myIp `
+    --parameters postgresAdminPassword=$postgresPasswordPlain localSeedIpAddress=$myIp githubActionsSpObjectId=$githubActionsSpObjectId `
     --query "properties.outputs" -o json | ConvertFrom-Json
 
 Write-Host "ACR: $($deployment.acrLoginServer.value)"
