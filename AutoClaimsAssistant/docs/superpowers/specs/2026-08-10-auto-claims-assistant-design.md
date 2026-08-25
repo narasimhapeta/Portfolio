@@ -11,13 +11,17 @@
 - Demonstrate MCP as the mechanism agents use to reach real systems (policy DB, claims history, VIN/vehicle-value) instead of hallucinating facts.
 - Demonstrate an eval-gated CI/CD pipeline: an LLM-as-judge + deterministic eval suite that blocks prompt/model regressions before they reach production, with canary rollout.
 - Produce a portfolio-credible, cost-conscious real deployment on Azure (not a local-only simulation).
+- Provide a user-facing web UI for submitting FNOL reports, viewing claim status/recommendation, uploading documents, and browsing claim history — a structured, form-based UI, not conversational *(added scope, Phase 11 — see note under Non-Goals below)*.
+- Provide production-grade observability — structured logging, distributed tracing, and metrics — across the FastAPI API, the three MCP servers, and the Agent Framework orchestration graph, with a real dashboard for inspection, not just log lines *(added scope, Phase 12; see [Phase 12's plan](../plans/2026-08-25-phase-12-observability.md))*.
 
 **Non-Goals (explicitly out of scope for this spec):**
 - Real customer data or real compliance certification (HIPAA/SOC2/state insurance regulatory approval). This is a demonstration system using synthetic data only.
 - Autonomous final claims decisions. The system always produces a recommendation for a human adjuster; it never auto-approves or auto-denies a claim.
-- A user-facing web or chat UI. Interaction surface is the API itself (FastAPI + OpenAPI/Swagger docs), consumed via Postman/HTTP client for demos.
+- ~~A user-facing web or chat UI. Interaction surface is the API itself (FastAPI + OpenAPI/Swagger docs), consumed via Postman/HTTP client for demos.~~ *(superseded — see note below)*
 - Literal AKS usage. Azure Container Apps is used as the containerized-compute layer; the AKS-vs-ACA tradeoff is documented (Section 7) so it can be discussed accurately rather than misrepresented on a resume.
 - ML-trained fraud model. Fraud-risk scoring is LLM reasoning over real signals (via MCP), not a trained classifier — see Section 4 for rationale.
+
+*Note: the "no user-facing web or chat UI" non-goal above and the matching Section 11 deferred item were both explicit v1 exclusions, deliberately reversed for Phase 11 during a 2026-08-25 brainstorming session. What's now in scope is a structured, form-based multi-page UI (Streamlit) — not a chat interface, which stays out of scope. See [Phase 11's plan](../plans/2026-08-25-phase-11-frontend.md) for the full design and rationale, confirmed with the project owner before planning.*
 
 ## 2. Success Criteria
 
@@ -165,6 +169,6 @@ The eval suite is the mechanism that actually earns the "production-grade" claim
 ## 11. Open Items / Future Work (explicitly deferred)
 
 - Real AKS deployment, if a later goal requires it for a specific job description's literal keyword match.
-- A web or chat UI on top of the API.
+- ~~A web or chat UI on top of the API.~~ Moved into scope as **Phase 11** (a structured multi-page UI, not a chat interface). See the Section 1 note above.
 - Automated routing of high-value/high-fraud-risk claims to mandatory human sign-off (conditional gating) — noted as a natural extension once the base pipeline is solid, not built in v1.
 - Expanding the policy corpus beyond ~8–12 documents if retrieval quality needs more stress-testing.
