@@ -14,6 +14,12 @@ builder.Services.AddHealthChecks();
 builder.Services.AddDbContext<CustomerPortalDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CustomerPortal")));
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+});
+
+
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateCustomerRequestValidator>();
