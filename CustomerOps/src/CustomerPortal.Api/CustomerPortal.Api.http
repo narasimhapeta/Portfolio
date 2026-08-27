@@ -4,6 +4,7 @@
 GET {{CustomerPortal.Api_HostAddress}}/api/v1/customers
 
 ### Create a customer
+# @name create
 POST {{CustomerPortal.Api_HostAddress}}/api/v1/customers
 Content-Type: application/json
 
@@ -16,3 +17,17 @@ Content-Type: application/json
 
 ### Search customers
 GET {{CustomerPortal.Api_HostAddress}}/api/v1/customers/search?query=Lovelace
+
+### Get customer by id (from the Create response above)
+GET {{CustomerPortal.Api_HostAddress}}/api/v1/customers/{{create.response.body.id}}
+
+### Update customer (invalidates the Redis cache entry)
+PUT {{CustomerPortal.Api_HostAddress}}/api/v1/customers/{{create.response.body.id}}
+Content-Type: application/json
+
+{
+  "firstName": "Grace",
+  "lastName": "Hopper",
+  "email": "grace@example.com",
+  "phone": "555-0200"
+}
