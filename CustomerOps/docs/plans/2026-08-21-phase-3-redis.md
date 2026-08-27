@@ -885,10 +885,10 @@ Terminal 3, inspect Redis directly:
 
 ```bash
 docker exec -it customerops-redis-1 redis-cli KEYS "customer:*"
-docker exec -it customerops-redis-1 redis-cli GET "customer:<the-id-from-step-above>"
+docker exec -it customerops-redis-1 redis-cli HGETALL "customer:<the-id-from-step-above>"
 ```
 
-**Expected result:** the key exists and `GET` returns the serialized `CustomerDto` JSON. Now `PUT` an update to that customer via the `.http` file, and re-run `KEYS "customer:*"` — the key should be gone (invalidated). `GET` the customer again via the API — the key reappears (repopulated from SQL on the next read).
+**Expected result:** the key exists and `HGETALL` returns three hash fields — `data` (the serialized `CustomerDto` JSON), `absexp`, and `sldexp`. Plain `redis-cli GET` on this key fails with `WRONGTYPE` — `Microsoft.Extensions.Caching.StackExchangeRedis` stores every entry as a Redis hash, not a string, so hash commands (`HGETALL`/`HGET ... data`) are required to inspect it. Now `PUT` an update to that customer via the `.http` file, and re-run `KEYS "customer:*"` — the key should be gone (invalidated). `GET` the customer again via the API — the key reappears (repopulated from SQL on the next read).
 
 Optional: stop the `redis` container (`docker compose stop redis`) and `GET` the customer again — the API should still return `200 OK` with the customer data (falling back to SQL), not an error, demonstrating the graceful-degradation path from Task 2.
 
@@ -904,4 +904,22 @@ Optional: stop the `redis` container (`docker compose stop redis`) and `GET` the
 
 ## Lessons Learned
 
-_(To be appended after the CLAUDE.md §46 interview checkpoint, per the convention started after Phase 2.)_
+Captured from debugging findings hit while executing this plan and from the CLAUDE.md §46 interview checkpoint at the end of the phase.
+
+### Debugging findings
+
+- **`Microsoft.Extensions.Caching.StackExchangeRedis` stores entries as Redis hashes, not strings.** Manually inspecting a cached key with `redis-cli GET "customer:<id>"` fails with `(error) WRONGTYPE Operation against a key holding the wrong kind of value`. The library's `RedisCache` implementation writes each entry via `HSET`, with three fields: `data` (the byte payload — our serialized `CustomerDto` JSON), `absexp` (absolute expiration, as ticks), and `sldexp` (sliding expiration, as ticks — unused here since we only set `AbsoluteExpirationRelativeToNow`). `HGETALL "customer:<id>"` (or `HGET "customer:<id>" data` for just the payload) is the correct inspection command. This didn't affect `CustomerCacheTests` because it asserts via `KeyExistsAsync`, which is type-agnostic — a test that tried `StringGetAsync` instead would have hit the same `WRONGTYPE` error. Take-away for future plans: when a plan's manual-verification steps show raw `redis-cli` commands against a key written through `IDistributedCache`, use hash commands (`HGETALL`/`HGET ... data`), not `GET` — this is now corrected in Task 3 Step 7 above.
+
+### Interview checkpoint Q&A
+
+**Q1. Why does `CustomerService` depend on `IDistributedCache` rather than injecting `IConnectionMultiplexer`/`StackExchange.Redis` directly?**
+Answer given: `IDistributedCache` is used to manage the cache across application servers, whereas `IConnectionMultiplexer`/`StackExchange.Redis` are used to connect to or set up Redis.
+Assessment: corrected — `IDistributedCache` doesn't itself coordinate anything across servers; it's just an interface. The actual reasons mirror Phase 2's `ICustomerRepository` rationale (its own Q1): **testability** (`FakeDistributedCache`/`ThrowingDistributedCache` let `CustomerServiceTests` exercise hit/miss/failure behavior with zero real Redis, versus mocking Redis's much larger native API) and **swappability** (`IDistributedCache` has other backends — SQL Server, in-memory, Azure Cache for Redis via the same client — so the Phase 10 Azure move is a `Program.cs` connection-string change, not a `CustomerService` change). `IConnectionMultiplexer` is still the right tool when Redis-specific features are needed beyond the `IDistributedCache` contract — which is exactly why `CustomerCacheTests` used it directly, since "does this specific key exist" isn't part of that interface.
+
+**Q2. Walk through exactly what happens inside `GetByIdAsync` if Redis is completely unreachable — where does it fail, and how does it still return `200 OK`?**
+Answer given: if Redis is unreachable it returns null, and a null cached value falls back to the database, returning 200.
+Assessment: correct on the outcome, sharpened on the mechanism — Redis doesn't return null when unreachable; the client **throws** (e.g. a connection exception) when `cache.GetAsync` is called. Inside `TryGetCachedAsync`'s `try`/`catch`, that exception is caught, a warning is logged, and the method returns `null` regardless of whether the real cause was "key not found" (genuine miss) or "Redis is down" (failure). `GetByIdAsync` can't tell these two apart and doesn't need to — both fall through to `repository.GetByIdAsync` identically, which is why no `if (redisIsDown)` branch exists anywhere in the service.
+
+**Q3. Why does `CustomerApiFactory.ConfigureWebHost` call `services.RemoveAll<IDistributedCache>()` before calling `AddStackExchangeRedisCache` again, instead of just calling it once with the test container's connection string?**
+Answer given: it clears any stale cache data.
+Assessment: corrected — `RemoveAll<IDistributedCache>()` removes a *service registration* from the DI container at host-startup time; there's no cached data involved yet at that point. The real issue: `Program.cs` already registers `IDistributedCache` once, pointed at `localhost:6379` (the Development config value). Without `RemoveAll`, calling `AddStackExchangeRedisCache` again would leave **two** registrations in the container — the app's real one and the test one. .NET's default container happens to resolve a single dependency to the *last* registration, so this might work by luck of ordering, but that's an implicit guarantee, not an explicit one, and any code resolving `IEnumerable<IDistributedCache>` would see both (including one pointed at a `localhost:6379` that may not be running in CI). `RemoveAll` makes the test host hermetic — exactly the same reasoning already applied to `RemoveAll<DbContextOptions<CustomerPortalDbContext>>()` for SQL Server back in Phase 2.
