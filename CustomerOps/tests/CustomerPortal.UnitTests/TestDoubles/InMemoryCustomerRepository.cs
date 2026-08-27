@@ -6,10 +6,14 @@ namespace CustomerPortal.UnitTests.TestDoubles;
 public class InMemoryCustomerRepository : ICustomerRepository
 {
     private readonly List<Customer> _customers = new();
+    public int GetByIdCallCount { get; private set; }
 
-    public Task<Customer?> GetByIdAsync(Guid id, CancellationToken ct) =>
-        Task.FromResult(_customers.FirstOrDefault(c => c.Id == id));
+    public Task<Customer?> GetByIdAsync(Guid id, CancellationToken ct)
+    {
 
+        GetByIdCallCount++;
+        return Task.FromResult(_customers.FirstOrDefault(c => c.Id == id));
+    }
     public Task<(IReadOnlyList<Customer> Items, int TotalCount)> ListAsync(int pageNumber, int pageSize, CancellationToken ct)
     {
         var ordered = _customers.OrderBy(c => c.LastName).ToList();

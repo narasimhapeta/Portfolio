@@ -1,16 +1,26 @@
 using CustomerPortal.Application.Customers;
 using CustomerPortal.UnitTests.TestDoubles;
 using FluentValidation;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace CustomerPortal.UnitTests.Customers;
 
 public class CustomerServiceTests
 {
-    private readonly CustomerService _service = new(
-        new InMemoryCustomerRepository(),
-        new CreateCustomerRequestValidator(),
-        new UpdateCustomerRequestValidator());
+    private readonly InMemoryCustomerRepository _repository = new();
+    private readonly FakeDistributedCache _cache = new();
+    private readonly CustomerService _service;
+
+    public CustomerServiceTests()
+    {
+        _service = new CustomerService(
+            _repository,
+            _cache,
+            NullLogger<CustomerService>.Instance,
+            new CreateCustomerRequestValidator(),
+            new UpdateCustomerRequestValidator());
+    }
 
     private static CreateCustomerRequest ValidCreateRequest() => new()
     {
@@ -87,5 +97,70 @@ public class CustomerServiceTests
         var result = await _service.ListAsync(pageNumber: 1, pageSize: 500, CancellationToken.None);
 
         Assert.Equal(100, result.PageSize);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_OnCacheMiss_PopulatesCache()
+    {
+        var created = await _service.CreateAsync(ValidCreateRequest(), CancellationToken.None);
+
+        await _service.GetByIdAsync(created.Id, CancellationToken.None);
+
+        Assert.True(_cache.ContainsKey($"customer:{created.Id}"));
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_OnCacheHit_DoesNotCallRepositoryAgain()
+    {
+        var created = await _service.CreateAsync(ValidCreateRequest(), CancellationToken.None);
+        await _service.GetByIdAsync(created.Id, CancellationToken.None);
+        var callsAfterFirstRead = _repository.GetByIdCallCount;
+
+        var second = await _service.GetByIdAsync(created.Id, CancellationToken.None);
+
+        Assert.Equal(callsAfterFirstRead, _repository.GetByIdCallCount);
+        Assert.Equal(created.Id, second.Id);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_InvalidatesCache()
+    {
+        var created = await _service.CreateAsync(ValidCreateRequest(), CancellationToken.None);
+        await _service.GetByIdAsync(created.Id, CancellationToken.None);
+
+        await _service.UpdateAsync(
+            created.Id,
+            new UpdateCustomerRequest { FirstName = "Grace", LastName = "Hopper", Email = "grace@example.com", Phone = "555-0200" },
+            CancellationToken.None);
+
+        Assert.False(_cache.ContainsKey($"customer:{created.Id}"));
+    }
+
+    [Fact]
+    public async Task DeactivateAsync_InvalidatesCache()
+    {
+        var created = await _service.CreateAsync(ValidCreateRequest(), CancellationToken.None);
+        await _service.GetByIdAsync(created.Id, CancellationToken.None);
+
+        await _service.DeactivateAsync(created.Id, CancellationToken.None);
+
+        Assert.False(_cache.ContainsKey($"customer:{created.Id}"));
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenCacheThrows_FallsBackToRepository()
+    {
+        var repository = new InMemoryCustomerRepository();
+        var service = new CustomerService(
+            repository,
+            new ThrowingDistributedCache(),
+            NullLogger<CustomerService>.Instance,
+            new CreateCustomerRequestValidator(),
+            new UpdateCustomerRequestValidator());
+        var created = await service.CreateAsync(ValidCreateRequest(), CancellationToken.None);
+
+        var fetched = await service.GetByIdAsync(created.Id, CancellationToken.None);
+
+        Assert.Equal(created.Id, fetched.Id);
     }
 }
