@@ -50,3 +50,7 @@ def claim_response_from_model(claim: Claim) -> ClaimResponse:
         document_urls=claim.document_urls,
 
     )
+
+
+class ClaimListResponse(BaseModel):
+    claims: list[ClaimResponse]

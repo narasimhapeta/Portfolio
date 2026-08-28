@@ -244,3 +244,21 @@ async def test_upload_document_appends_url_to_claim(seeded_db):
     assert body["document_urls"] is not None
     assert len(body["document_urls"]) == 1
     assert body["document_urls"][0].endswith("damage.jpg")
+
+
+@pytest.mark.asyncio
+async def test_list_claims_returns_persisted_claims_newest_first():
+    await create_all_tables()
+    fake_workflow = _FakeWorkflow(outputs=[_RECOMMENDATION])
+
+    async with _client_with_fake_workflow(fake_workflow) as client:
+        first = await client.post("/claims", json=_REQUEST_BODY)
+        second = await client.post("/claims", json=_REQUEST_BODY)
+        response = await client.get("/claims?limit=10&offset=0")
+
+    assert response.status_code == 200
+    body = response.json()
+    ids = [c["id"] for c in body["claims"]]
+    assert second.json()["id"] in ids
+    assert first.json()["id"] in ids
+    assert ids.index(second.json()["id"]) < ids.index(first.json()["id"])

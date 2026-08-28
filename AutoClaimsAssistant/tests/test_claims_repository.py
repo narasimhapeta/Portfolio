@@ -12,6 +12,7 @@ from claims_assistant.claims_repository import (
     create_completed_claim,
     create_failed_claim,
     get_claim_by_id,
+    list_claims,
 )
 from claims_assistant.database import create_all_tables, get_session_factory
 from claims_assistant.fnol_schema import FNOLFacts, Party, VehicleInfo
@@ -134,3 +135,27 @@ async def test_get_claim_by_id_returns_none_for_unknown_id():
         fetched = await get_claim_by_id(session, uuid.uuid4())
 
     assert fetched is None
+
+
+@pytest.mark.asyncio
+async def test_list_claims_returns_newest_first_and_respects_limit():
+    await create_all_tables()
+    session_factory = get_session_factory()
+
+    async with session_factory() as session:
+        for i in range(3):
+            await create_failed_claim(
+                session,
+                ClaimIntakeRequest(
+                    policy_number=f"POL-CA-000{i}",
+                    vin="1C4RJFBG5FC123458",
+                    narrative_text="test claim",
+                ),
+                f"error {i}",
+            )
+
+    async with session_factory() as session:
+        claims = await list_claims(session, limit=2, offset=0)
+
+    assert len(claims) == 2
+    assert claims[0].created_at >= claims[1].created_at

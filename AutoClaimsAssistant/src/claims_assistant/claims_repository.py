@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from claims_assistant.agents.adjuster_summary_schema import ClaimRecommendation
@@ -62,3 +63,10 @@ async def add_document_url(session: AsyncSession, claim: Claim, url: str) -> Cla
     claim.document_urls = [*(claim.document_urls or []), url]
     await session.commit()
     return claim
+
+
+async def list_claims(session: AsyncSession, limit: int = 50, offset: int = 0) -> list[Claim]:
+    result = await session.execute(
+        select(Claim).order_by(Claim.created_at.desc()).limit(limit).offset(offset)
+    )
+    return list(result.scalars().all())

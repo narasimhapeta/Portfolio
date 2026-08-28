@@ -10,13 +10,18 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from claims_assistant.agents.adjuster_summary_schema import ClaimRecommendation
-from claims_assistant.api.claims_schema import ClaimResponse, claim_response_from_model
+from claims_assistant.api.claims_schema import (
+    ClaimListResponse,
+    ClaimResponse,
+    claim_response_from_model,
+)
 from claims_assistant.claims_repository import (
     add_document_url,
     create_clarification_claim,
     create_completed_claim,
     create_failed_claim,
     get_claim_by_id,
+    list_claims,
 )
 from claims_assistant.config import Settings, get_settings
 from claims_assistant.database import get_db_session
@@ -67,6 +72,14 @@ async def submit_claim(
     else:
         claim = await create_clarification_claim(session, intake, outcome)
     return claim_response_from_model(claim)
+
+
+@router.get("/claims", response_model=ClaimListResponse)
+async def list_claims_route(
+    session: SessionDep, limit: int = 50, offset: int = 0
+) -> ClaimListResponse:
+    claims = await list_claims(session, limit=limit, offset=offset)
+    return ClaimListResponse(claims=[claim_response_from_model(c) for c in claims])
 
 
 @router.get("/claims/{claim_id}", response_model=ClaimResponse)
