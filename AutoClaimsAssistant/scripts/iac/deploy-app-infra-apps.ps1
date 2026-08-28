@@ -16,6 +16,11 @@ $searchKey = Read-Host "Azure Search API key" -AsSecureString
 $searchKeyPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
     [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($searchKey)
 )
+$frontendPassword = Read-Host "Frontend access password (new or existing)" -AsSecureString
+$frontendPasswordPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+    [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($frontendPassword)
+)
+
 
 az acr login --name claimsassistantacr
 $sha = (git rev-parse --short HEAD)
@@ -29,7 +34,9 @@ $searchEndpoint = "https://claims-assistant-search.search.windows.net"
 $deployment = az deployment group create `
     --resource-group claims-assistant-rg `
     --template-file iac/app-infra-apps.bicep `
-    --parameters imageTag=$sha postgresAdminPassword=$postgresPasswordPlain azureOpenAiApiKey=$openAiKeyPlain azureSearchApiKey=$searchKeyPlain azureStorageConnectionString=$storageConn azureOpenAiEndpoint=$openAiEndpoint azureOpenAiApiVersion="2024-12-01-preview" azureSearchEndpoint=$searchEndpoint `
+    --parameters imageTag=$sha postgresAdminPassword=$postgresPasswordPlain azureOpenAiApiKey=$openAiKeyPlain azureSearchApiKey=$searchKeyPlain azureStorageConnectionString=$storageConn azureOpenAiEndpoint=$openAiEndpoint azureOpenAiApiVersion="2024-12-01-preview" azureSearchEndpoint=$searchEndpoint frontendAccessPassword=$frontendPasswordPlain `
     --query "properties.outputs" -o json | ConvertFrom-Json
 
 Write-Host "API deployed at: https://$($deployment.apiFqdn.value)"
+Write-Host "Frontend deployed at: https://$($deployment.frontendFqdn.value)"
+

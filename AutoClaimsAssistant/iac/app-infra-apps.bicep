@@ -16,6 +16,11 @@ param azureSearchApiKey string
 @secure()
 param azureStorageConnectionString string
 
+@secure()
+@description('Shared password gating access to the frontend')
+param frontendAccessPassword string
+
+
 param azureOpenAiEndpoint string
 param azureOpenAiApiVersion string
 param azureSearchEndpoint string
@@ -266,4 +271,55 @@ resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
   ]
 }
 
+resource frontend 'Microsoft.App/containerApps@2026-03-02-preview' = {
+  name: 'claims-assistant-frontend'
+  location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${acrPullIdentity.id}': {}
+    }
+  }
+  properties: {
+    environmentId: containerAppsEnv.id
+    configuration: {
+      ingress: {
+        external: true
+        targetPort: 8501
+        transport: 'auto'
+      }
+      registries: [
+        { server: acrLoginServer, identity: acrPullIdentity.id }
+      ]
+      secrets: [
+        { name: 'frontend-password', value: frontendAccessPassword }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'claims-assistant-frontend'
+          image: image
+          command: ['uv']
+          args: [
+            'run', 'streamlit', 'run', 'src/claims_assistant/frontend/app.py'
+            '--server.port', '8501', '--server.address', '0.0.0.0'
+          ]
+          env: [
+            { name: 'CLAIMS_API_BASE_URL', value: 'https://${api.properties.configuration.ingress.fqdn}' }
+            { name: 'FRONTEND_ACCESS_PASSWORD', secretRef: 'frontend-password' }
+          ]
+        }
+      ]
+      scale: { minReplicas: 0, maxReplicas: 2 }
+    }
+  }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
+}
+
+
+
 output apiFqdn string = api.properties.configuration.ingress.fqdn
+output frontendFqdn string = frontend.properties.configuration.ingress.fqdn
