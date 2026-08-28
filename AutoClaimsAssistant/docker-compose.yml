@@ -54,6 +54,7 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
       POLICY_DB_MCP_URL: http://policy-db-mcp:8101/mcp
       CLAIMS_HISTORY_MCP_URL: http://claims-history-mcp:8102/mcp
       VIN_VEHICLE_MCP_URL: http://vin-vehicle-mcp:8103/mcp
@@ -68,6 +69,19 @@ services:
         condition: service_started
       vin-vehicle-mcp:
         condition: service_started
+
+  frontend:
+    build: .
+    command: uv run streamlit run src/claims_assistant/frontend/app.py --server.port 8501 --server.address 0.0.0.0
+    environment:
+      CLAIMS_API_BASE_URL: http://api:8000
+      FRONTEND_ACCESS_PASSWORD: devpassword
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_started
+
 
 volumes:
   pgdata:
