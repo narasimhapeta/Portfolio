@@ -8,7 +8,7 @@ import httpx
 
 class ClaimsApiClient:
     def __init__(self, base_url: str, transport: httpx.BaseTransport | None = None) -> None:
-        self._client = httpx.Client(base_url=base_url, transport=transport, timeout=60.0)
+        self._client = httpx.Client(base_url=base_url, transport=transport, timeout=180.0)
 
     def submit_claim(self, policy_number: str, vin: str, narrative_text: str) -> dict[str, Any]:
         response = self._client.post(
