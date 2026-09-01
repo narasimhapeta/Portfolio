@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from claims_assistant.database import get_session_factory
 from claims_assistant.models import Policy, Vehicle
+from claims_assistant.observability import configure_observability
 
 
 class PolicyLookupResult(BaseModel):
@@ -70,5 +71,6 @@ async def get_policy_by_vin(vin: str) -> PolicyLookupResult:
 
 
 if __name__ == "__main__":
+    configure_observability(service_name="policy-db-mcp")
     mcp.run(transport="streamable-http", host="0.0.0.0", port=8101, stateless_http=True)
 

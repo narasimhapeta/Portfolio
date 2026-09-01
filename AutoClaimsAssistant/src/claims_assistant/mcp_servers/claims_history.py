@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from claims_assistant.database import get_session_factory
 from claims_assistant.models import ClaimHistory, Policy
+from claims_assistant.observability import configure_observability
 
 
 class ClaimSummary(BaseModel):
@@ -80,4 +81,5 @@ async def get_claims_history(policy_number: str) -> ClaimsHistoryResult:
 
 
 if __name__ == "__main__":
+    configure_observability(service_name="claims-history-mcp")
     mcp.run(transport="streamable-http", host="0.0.0.0", port=8102, stateless_http=True)

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from claims_assistant.database import get_session_factory
 from claims_assistant.models import Vehicle
+from claims_assistant.observability import configure_observability
 
 
 class VehicleLookupResult(BaseModel):
@@ -50,5 +51,6 @@ async def decode_vin(vin: str) -> VehicleLookupResult:
 
 
 if __name__ == "__main__":
+    configure_observability(service_name="vin-vehicle-mcp")
     mcp.run(transport="streamable-http", host="0.0.0.0", port=8103, stateless_http=True)
 
