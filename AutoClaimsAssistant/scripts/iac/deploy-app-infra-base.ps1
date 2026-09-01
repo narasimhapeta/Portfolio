@@ -40,3 +40,4 @@ if ($LASTEXITCODE -ne 0) {
 
 
 Write-Host "Base infra deployed and seeded. Save the Postgres password -- deploy-app-infra-apps.ps1 needs it again."
+Write-Host "App Insights connection string: $($deployment.appInsightsConnectionString.value)"

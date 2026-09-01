@@ -55,6 +55,17 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2026-03-01' = {
   }
 }
 
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: 'claims-assistant-insights'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalytics.id
+  }
+}
+
+
 resource containerAppsEnv 'Microsoft.App/managedEnvironments@2026-03-02-preview' = {
   name: 'claims-assistant-env'
   location: location
@@ -141,3 +152,5 @@ resource claimDocumentsContainer 'Microsoft.Storage/storageAccounts/blobServices
 output acrLoginServer string = acr.properties.loginServer
 output postgresFqdn string = postgres.properties.fullyQualifiedDomainName
 output storageAccountName string = storage.name
+output appInsightsConnectionString string = appInsights.properties.ConnectionString
+
