@@ -23,6 +23,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2",
     "streamlit>=1.62.0",
     "uvicorn[standard]>=0.52.1",
+    "azure-monitor-opentelemetry>=1.8.9",
 ]
 
 [project.scripts]
