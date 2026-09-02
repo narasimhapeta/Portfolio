@@ -25,6 +25,7 @@ from claims_assistant.claims_repository import (
 )
 from claims_assistant.config import Settings, get_settings
 from claims_assistant.database import get_db_session
+from claims_assistant.observability_metrics import record_claim_outcome
 from claims_assistant.storage.blob import upload_claim_document
 from claims_assistant.workflow.graph import get_claim_intake_workflow
 from claims_assistant.workflow.messages import ClaimIntakeRequest
@@ -53,6 +54,7 @@ async def submit_claim(
         result = await workflow.run(intake)
     except Exception as exc:
         claim = await create_failed_claim(session, intake, str(exc))
+        record_claim_outcome(claim.status)
         return JSONResponse(
             status_code=502,
             content=claim_response_from_model(claim).model_dump(mode="json"),
@@ -71,6 +73,7 @@ async def submit_claim(
         claim = await create_completed_claim(session, intake, outcome)
     else:
         claim = await create_clarification_claim(session, intake, outcome)
+    record_claim_outcome(claim.status)
     return claim_response_from_model(claim)
 
 

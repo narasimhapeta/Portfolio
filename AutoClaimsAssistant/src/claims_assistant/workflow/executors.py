@@ -15,6 +15,10 @@ from claims_assistant.agents.coverage_agent import determine_coverage
 from claims_assistant.agents.extraction_agent import extract_fnol_facts
 from claims_assistant.agents.fraud_agent import assess_fraud_risk
 from claims_assistant.config import Settings
+from claims_assistant.observability_metrics import (
+    record_extraction_confidence,
+    record_fraud_risk_score,
+)
 from claims_assistant.workflow.messages import (
     ClaimIntakeRequest,
     ClarificationRequest,
@@ -38,6 +42,8 @@ class ExtractionExecutor(Executor):
         self, message: ClaimIntakeRequest, ctx: WorkflowContext[ExtractionResult]
     ) -> None:
         extraction = await extract_fnol_facts(self._agent, message.narrative_text)
+        for field, confidence in extraction.confidence.model_dump().items():
+            record_extraction_confidence(field, confidence)
         await ctx.send_message(ExtractionResult(request=message, extraction=extraction))
 
 
@@ -134,9 +140,11 @@ class FraudRiskExecutor(Executor):
             incident_date,
             message.request.narrative_text,
         )
+        record_fraud_risk_score(assessment.risk_score, assessment.risk_tier)
         await ctx.send_message(
             FraudOutcome(policy_number=message.request.policy_number, assessment=assessment)
         )
+
 
 
 class AdjusterSummaryExecutor(Executor):
