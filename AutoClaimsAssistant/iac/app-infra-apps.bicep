@@ -20,6 +20,9 @@ param azureStorageConnectionString string
 @description('Shared password gating access to the frontend')
 param frontendAccessPassword string
 
+@secure()
+param appInsightsConnectionString string
+
 
 param azureOpenAiEndpoint string
 param azureOpenAiApiVersion string
@@ -82,6 +85,7 @@ resource policyDbMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
+        { name: 'app-insights-connection-string', value: appInsightsConnectionString }
       ]
     }
     template: {
@@ -98,6 +102,7 @@ resource policyDbMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
             { name: 'POSTGRES_USER', value: 'claimsadmin' }
             { name: 'POSTGRES_PASSWORD', secretRef: 'postgres-password' }
             { name: 'POSTGRES_SSL_MODE', value: 'require' }
+            { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', secretRef: 'app-insights-connection-string' }
           ]
         }
       ]
@@ -130,6 +135,7 @@ resource claimsHistoryMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
+        { name: 'app-insights-connection-string', value: appInsightsConnectionString }
       ]
     }
     template: {
@@ -146,6 +152,7 @@ resource claimsHistoryMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
             { name: 'POSTGRES_USER', value: 'claimsadmin' }
             { name: 'POSTGRES_PASSWORD', secretRef: 'postgres-password' }
             { name: 'POSTGRES_SSL_MODE', value: 'require' }
+            { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', secretRef: 'app-insights-connection-string' }
           ]
         }
       ]
@@ -178,6 +185,7 @@ resource vinVehicleMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
       ]
       secrets: [
         { name: 'postgres-password', value: postgresAdminPassword }
+        { name: 'app-insights-connection-string', value: appInsightsConnectionString }
       ]
     }
     template: {
@@ -194,6 +202,7 @@ resource vinVehicleMcp 'Microsoft.App/containerApps@2026-03-02-preview' = {
             { name: 'POSTGRES_USER', value: 'claimsadmin' }
             { name: 'POSTGRES_PASSWORD', secretRef: 'postgres-password' }
             { name: 'POSTGRES_SSL_MODE', value: 'require' }
+            { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', secretRef: 'app-insights-connection-string' }
           ]
         }
       ]
@@ -230,6 +239,7 @@ resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
         { name: 'azure-openai-key', value: azureOpenAiApiKey }
         { name: 'azure-search-key', value: azureSearchApiKey }
         { name: 'azure-storage-conn', value: azureStorageConnectionString }
+        { name: 'app-insights-connection-string', value: appInsightsConnectionString }
       ]
     }
     template: {
@@ -260,6 +270,7 @@ resource api 'Microsoft.App/containerApps@2026-03-02-preview' = {
             { name: 'AZURE_SEARCH_INDEX_NAME', value: 'policy-documents' }
             { name: 'AZURE_STORAGE_CONNECTION_STRING', secretRef: 'azure-storage-conn' }
             { name: 'AZURE_STORAGE_CONTAINER_NAME', value: 'claim-documents' }
+            { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', secretRef: 'app-insights-connection-string' }
           ]
         }
       ]

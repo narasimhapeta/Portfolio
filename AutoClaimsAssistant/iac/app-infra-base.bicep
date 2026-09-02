@@ -65,6 +65,49 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
+resource dashboard 'Microsoft.Insights/workbooks@2023-06-01' = {
+  name: guid('claims-assistant-dashboard', resourceGroup().id)
+  location: location
+  kind: 'shared'
+  properties: {
+    displayName: 'Claims Assistant Dashboard'
+    category: 'workbook'
+    sourceId: appInsights.id
+    serializedData: string({
+      version: 'Notebook/1.0'
+      items: [
+        {
+          type: 3
+          content: {
+            version: 'KqlItem/1.0'
+            query: 'requests | summarize RequestCount=count(), FailureRate=100.0*countif(success==false)/count(), AvgDuration=avg(duration) by bin(timestamp, 5m) | order by timestamp asc'
+            size: 0
+            title: 'API request rate / failure rate / latency'
+          }
+        }
+        {
+          type: 3
+          content: {
+            version: 'KqlItem/1.0'
+            query: 'customMetrics | where name == "claims_assistant.claim.outcome" | summarize Count=sum(valueSum) by tostring(customDimensions["status"]), bin(timestamp, 1h)'
+            size: 0
+            title: 'Claim outcome distribution over time'
+          }
+        }
+        {
+          type: 3
+          content: {
+            version: 'KqlItem/1.0'
+            query: 'dependencies | where type == "InProc" or name contains "invoke_agent" | summarize AvgDuration=avg(duration) by name | order by AvgDuration desc'
+            size: 0
+            title: 'Per-agent latency breakdown'
+          }
+        }
+      ]
+    })
+  }
+}
+
 
 resource containerAppsEnv 'Microsoft.App/managedEnvironments@2026-03-02-preview' = {
   name: 'claims-assistant-env'

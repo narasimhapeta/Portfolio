@@ -30,12 +30,14 @@ docker push "claimsassistantacr.azurecr.io/claims-assistant:$sha"
 $storageConn = az storage account show-connection-string --name claimsassistantstorage --resource-group claims-assistant-rg --query connectionString -o tsv
 $openAiEndpoint = az cognitiveservices account show --name claims-assistant-openai --resource-group claims-assistant-rg --query properties.endpoint -o tsv
 $searchEndpoint = "https://claims-assistant-search.search.windows.net"
+$appInsightsConnectionString = az deployment group show --resource-group claims-assistant-rg --name app-infra-base --query "properties.outputs.appInsightsConnectionString.value" -o tsv
 
 $deployment = az deployment group create `
     --resource-group claims-assistant-rg `
     --template-file iac/app-infra-apps.bicep `
-    --parameters imageTag=$sha postgresAdminPassword=$postgresPasswordPlain azureOpenAiApiKey=$openAiKeyPlain azureSearchApiKey=$searchKeyPlain azureStorageConnectionString=$storageConn azureOpenAiEndpoint=$openAiEndpoint azureOpenAiApiVersion="2024-12-01-preview" azureSearchEndpoint=$searchEndpoint frontendAccessPassword=$frontendPasswordPlain `
+    --parameters imageTag=$sha postgresAdminPassword=$postgresPasswordPlain azureOpenAiApiKey=$openAiKeyPlain azureSearchApiKey=$searchKeyPlain azureStorageConnectionString=$storageConn azureOpenAiEndpoint=$openAiEndpoint azureOpenAiApiVersion="2024-12-01-preview" azureSearchEndpoint=$searchEndpoint frontendAccessPassword=$frontendPasswordPlain appInsightsConnectionString=$appInsightsConnectionString `
     --query "properties.outputs" -o json | ConvertFrom-Json
+
 
 Write-Host "API deployed at: https://$($deployment.apiFqdn.value)"
 Write-Host "Frontend deployed at: https://$($deployment.frontendFqdn.value)"
